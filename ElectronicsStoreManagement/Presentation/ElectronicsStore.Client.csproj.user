@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_LastSelectedProfileId>D:\Study\Information_Manager_System_Programming\Project\Electronics Store Management Project\ElectronicsStoreManagement\Presentation\Properties\PublishProfiles\ClickOnceProfile.pubxml</_LastSelectedProfileId>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Update="AboutBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Flash.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmCategories.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmChangePass.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmCustomers.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmConfirm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmEmployees.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmOrderDetails.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmManufacturers.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmOrders.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmProducts.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmProductStatistics.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmPrintOrder.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="frmRevenueStatistics.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ProductCard.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="frmSale.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Reports\ElectronicsStoreDataSet.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+</Project>

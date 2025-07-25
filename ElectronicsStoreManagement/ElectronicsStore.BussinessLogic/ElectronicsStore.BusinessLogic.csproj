@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="SlugGenerator" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ElectronicsStore.DataAccess\ElectronicsStore.DataAccess.csproj" />
+    <ProjectReference Include="..\ElectronicsStore.DataTransferObject\ElectronicsStore.DataTransferObject.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,76 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>$(AssemblyName)</PackageId>
+    <Title>Sales Management App</Title>
+    <Authors>Huynh Quoc Huy</Authors>
+    <Company>HK.Huang</Company>
+    <Product>HK.Huang Sales Management</Product>
+    <Description>Sales Management Software is a comprehensive system designed to help businesses efficiently manage their sales operations. It allows users to handle product inventory, customer information, orders, invoices, and stock levels in a centralized platform. The software streamlines the sales process from order creation to payment, reduces manual tasks, and minimizes errors. With features like real-time data tracking, reporting tools, and user-friendly interfaces, it empowers business owners to monitor performance, make informed decisions, and improve overall productivity. Ideal for retail stores, wholesalers, and service providers, this solution enhances both customer satisfaction and operational efficiency.</Description>
+    <Copyright>Copyright ©2025 by Huynh Quoc Huy</Copyright>
+    <PackageProjectUrl>https://github.com/hkhuang07</PackageProjectUrl>
+    <PackageIcon>logoHKHuang01.jpg</PackageIcon>
+    <ApplicationIcon>monitor2.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="monitor2.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <PackageReference Include="Corrected.Microsoft.ReportingServices.ReportViewerControl.WinForms" Version="150.1358.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="ReportViewerCore.WinForms" Version="15.1.26" />
+    <PackageReference Include="SlugGenerator" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ElectronicsStore.BussinessLogic\ElectronicsStore.BusinessLogic.csproj" />
+    <ProjectReference Include="..\ElectronicsStore.DataTransferObject\ElectronicsStore.DataTransferObject.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Reports\ElectronicsStoreDataSet.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ElectronicsStoreDataSet.xsd</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Images\logoHKHuang01.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="Reports\ElectronicsStoreDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>ElectronicsStoreDataSet.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+	
+
+</Project>
