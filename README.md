@@ -1,9 +1,14 @@
 # 🚀 Sales Management System - Client-Server Model (Socket- Multi Threads Process -.NET Entity Framework) 📈
-
+**Project is Developing...**
 ## Project Overview
 
 Welcome to the **Sales Management System**! This repository presents a powerful and intuitive solution specifically crafted for electronics stores. Built on a robust **Client-Server architecture**, this system shines with its ability to handle concurrent operations through **multi-threading**, all while adhering to a clean **3-Layer Architecture** for unparalleled maintainability, scalability, and rock-solid data integrity. At its core, data persistence is masterfully managed using **.NET Entity Framework** and **SQL Server**.
-
+<p align="center">
+  <h3>Server & Client Overview  (Developing) </h3>
+  <img src="demo/server.jpg" alt="Server Console">
+   <img src="demo/client.jpg" alt="Server Console">
+   <p><em> Server Console & Client Interface.</em></p>
+</p>
 ## ✨ Key Features & Highlights ✨
 
 Here's what makes this project stand out:
