@@ -352,21 +352,18 @@ namespace ElectronicsStore.Presentation
 
             while (!isAuthenticated)
             {
-                // Khởi tạo frmLogin và truyền _clientService vào
                 logIn = new frmLogin(_clientService);
 
-                // Hiển thị form đăng nhập
                 if (logIn.ShowDialog() == DialogResult.OK)
                 {
-                    // Lấy thông tin đã đăng nhập từ Tag của frmLogin
-                    var loginResponse = logIn.Tag as LoginResponseDTO;
+                    // Lấy thông tin đã đăng nhập từ public property LoggedInUser của frmLogin
+                    var loginResponse = logIn.LoggedInUser; // <<< KHÔNG THAY ĐỔI, ĐÃ ĐÚNG
+
                     if (loginResponse != null)
                     {
-                        // Use the correct property names from LoginResponseDTO
-                        // Assuming LoginResponseDTO has properties: FullName, EmployeeId, IsAdmin
                         employeeName = loginResponse.FullName;
                         currentEmployeeId = loginResponse.UserId;
-                        currentEmployeeRole = loginResponse.Roles; // Assuming IsAdmin is the boolean property for role
+                        currentEmployeeRole = loginResponse.Roles;
 
                         isAuthenticated = true;
 
@@ -385,15 +382,15 @@ namespace ElectronicsStore.Presentation
                     }
                     else
                     {
-                        MessageBox.Show("Login failed unexpectedly. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        // Loop lại để người dùng nhập lại
+                        // Trường hợp này không nên xảy ra với logic mới trong frmLogin
+                        // vì frmLogin sẽ ném exception nếu không có LoggedInUser hợp lệ.
+                        MessageBox.Show("Login failed unexpectedly or user data is missing. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
                 else
                 {
-                    // Người dùng bấm Cancel hoặc đóng form đăng nhập
                     logIn.Dispose();
-                    Application.Exit(); // Thoát ứng dụng nếu không đăng nhập
+                    Application.Exit();
                     return;
                 }
             }

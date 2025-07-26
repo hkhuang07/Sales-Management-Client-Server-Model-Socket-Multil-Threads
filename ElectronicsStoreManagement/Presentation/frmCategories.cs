@@ -82,18 +82,17 @@ namespace ElectronicsStore.Presentation
                 {
                     try
                     {
-                        // Sửa từ ClientService.SendRequest<string, List<CategoryDTO>>
-                        // thành ClientService.SendRequest<string, ServerResponse<List<CategoryDTO>>>
-                        ServerResponse<List<CategoryDTO>> response = await _clientService.SendRequest<string, ServerResponse<List<CategoryDTO>>>("GetCategoriesByName", keyword);
+                        // ClientService.SendRequest đã tự xử lý ServerResponse và trả về Data trực tiếp
+                        List<CategoryDTO> categories = await _clientService.SendRequest<string, List<CategoryDTO>>("GetCategoriesByName", keyword);
 
-                        if (response.Success && response.Data != null)
+                        if (categories != null && categories.Any())
                         {
                             lblMessage.Text = ""; // Clear message if results found
-                            binding.DataSource = response.Data;
+                            binding.DataSource = categories;
                         }
                         else
                         {
-                            lblMessage.Text = response.Message ?? "No matching category found.";
+                            lblMessage.Text = "No matching category found.";
                             binding.DataSource = new List<CategoryDTO>(); // Clear DataGridView
                         }
                     }
@@ -134,16 +133,15 @@ namespace ElectronicsStore.Presentation
         {
             try
             {
-                // Sửa từ ClientService.SendRequest<object, List<CategoryDTO>>
-                // thành ClientService.SendRequest<object, ServerResponse<List<CategoryDTO>>>
-                ServerResponse<List<CategoryDTO>> response = await _clientService.SendRequest<object, ServerResponse<List<CategoryDTO>>>("GetAllCategories", null);
-                if (response.Success && response.Data != null)
+                // ClientService.SendRequest đã tự xử lý ServerResponse và trả về Data trực tiếp
+                List<CategoryDTO> categories = await _clientService.SendRequest<object, List<CategoryDTO>>("GetAllCategories", null);
+                if (categories != null)
                 {
-                    binding.DataSource = response.Data;
+                    binding.DataSource = categories;
                 }
                 else
                 {
-                    MessageBox.Show(response.Message ?? "Failed to load categories.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Failed to load categories. No data returned.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     binding.DataSource = new List<CategoryDTO>(); // Xóa dữ liệu nếu có lỗi
                 }
             }
@@ -187,11 +185,12 @@ namespace ElectronicsStore.Presentation
             try
             {
                 var dto = new CategoryDTO { CategoryName = txtCategoryName.Text.Trim() };
-                // Thay đổi kiểu trả về của SendRequest sang ServerResponse<CategoryDTO> hoặc ServerResponse<object>
-                // Tùy thuộc vào việc server có trả về DTO đã thao tác hay không.
-                // Nếu chỉ cần kiểm tra Success/Message, có thể dùng ServerResponse<object>
-                // Nếu server trả về CategoryDTO đã được thêm/cập nhật, thì dùng ServerResponse<CategoryDTO>
-                ServerResponse<object> response; // Dùng object vì bạn chỉ cần Success/Message ở đây
+
+                // Vì SendRequest trả về TResponseData (Data đã được trích xuất từ ServerResponse),
+                // nên ở đây chúng ta chỉ cần kiểm tra xem SendRequest có thành công hay không
+                // bằng cách bắt ngoại lệ (nếu có lỗi từ server, SendRequest sẽ ném ngoại lệ).
+                // Nếu không có ngoại lệ, tức là thành công.
+                object result = null; // Dùng object vì server có thể trả về null/void cho các thao tác thêm/sửa/xóa
 
                 if (string.IsNullOrEmpty(dto.CategoryName))
                 {
@@ -201,27 +200,22 @@ namespace ElectronicsStore.Presentation
 
                 if (signAdd)
                 {
-                    response = await _clientService.SendRequest<CategoryDTO, ServerResponse<object>>("AddCategory", dto);
+                    result = await _clientService.SendRequest<CategoryDTO, object>("AddCategory", dto);
                 }
                 else
                 {
                     dto.ID = id; // Gán lại ID cho DTO khi update
-                    response = await _clientService.SendRequest<CategoryDTO, ServerResponse<object>>("UpdateCategory", dto);
+                    result = await _clientService.SendRequest<CategoryDTO, object>("UpdateCategory", dto);
                 }
 
-                if (response.Success)
-                {
-                    MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    await LoadCategories(); // Tải lại dữ liệu sau khi lưu
-                    EnableControls(false);
-                }
-                else
-                {
-                    MessageBox.Show(response.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                // Nếu không có ngoại lệ được ném, tức là thành công
+                MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                await LoadCategories(); // Tải lại dữ liệu sau khi lưu
+                EnableControls(false);
             }
             catch (Exception ex)
             {
+                // Mọi lỗi từ server (Success = false) hoặc lỗi mạng đều đã được ClientService gói gọn và ném ra
                 MessageBox.Show($"Error saving category: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -243,19 +237,12 @@ namespace ElectronicsStore.Presentation
                     {
                         int idToDelete = selectedCategory.ID;
 
-                        // Sửa từ ClientService.SendRequest<int, ServerResponse>
-                        // thành ClientService.SendRequest<int, ServerResponse<object>>
-                        ServerResponse<object> response = await _clientService.SendRequest<int, ServerResponse<object>>("DeleteCategory", idToDelete);
+                        // SendRequest sẽ ném ngoại lệ nếu server báo lỗi hoặc có vấn đề mạng
+                        await _clientService.SendRequest<int, object>("DeleteCategory", idToDelete);
 
-                        if (response.Success)
-                        {
-                            MessageBox.Show("Category deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            await LoadCategories(); // Tải lại dữ liệu sau khi xóa
-                        }
-                        else
-                        {
-                            MessageBox.Show(response.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        // Nếu không có ngoại lệ, tức là thành công
+                        MessageBox.Show("Category deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadCategories(); // Tải lại dữ liệu sau khi xóa
                     }
                 }
                 catch (Exception ex)
@@ -331,23 +318,14 @@ namespace ElectronicsStore.Presentation
                                     CategoryName = r["CategoryName"].ToString() // Đảm bảo tên cột khớp với Excel
                                 };
 
-                                // Sửa từ ClientService.SendRequest<CategoryDTO, ServerResponse>
-                                // thành ClientService.SendRequest<CategoryDTO, ServerResponse<object>>
-                                ServerResponse<object> response = await _clientService.SendRequest<CategoryDTO, ServerResponse<object>>("AddCategory", dto);
-                                if (response.Success)
-                                {
-                                    successCount++;
-                                }
-                                else
-                                {
-                                    errorCount++;
-                                    Console.WriteLine($"Error importing row '{dto.CategoryName}': {response.Message}");
-                                }
+                                // SendRequest sẽ ném ngoại lệ nếu có lỗi, nếu không thì coi như thành công
+                                await _clientService.SendRequest<CategoryDTO, object>("AddCategory", dto);
+                                successCount++;
                             }
                             catch (Exception ex)
                             {
                                 errorCount++;
-                                Console.WriteLine($"Error importing row: {ex.Message}");
+                                Console.WriteLine($"Error importing row '{r["CategoryName"]}': {ex.Message}");
                             }
                         }
 
@@ -372,19 +350,13 @@ namespace ElectronicsStore.Presentation
             {
                 try
                 {
-                    // Sửa từ ClientService.SendRequest<object, List<CategoryDTO>>
-                    // thành ClientService.SendRequest<object, ServerResponse<List<CategoryDTO>>>
-                    ServerResponse<List<CategoryDTO>> response = await _clientService.SendRequest<object, ServerResponse<List<CategoryDTO>>>("GetAllCategories", null);
-                    List<CategoryDTO> categoriesToExport = new List<CategoryDTO>();
+                    // Lấy toàn bộ danh mục để xuất
+                    List<CategoryDTO> categoriesToExport = await _clientService.SendRequest<object, List<CategoryDTO>>("GetAllCategories", null);
 
-                    if (response.Success && response.Data != null)
+                    if (categoriesToExport == null || !categoriesToExport.Any())
                     {
-                        categoriesToExport = response.Data;
-                    }
-                    else
-                    {
-                        MessageBox.Show(response.Message ?? "Failed to retrieve categories for export.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return; // Không xuất file nếu không lấy được dữ liệu
+                        MessageBox.Show("No categories to export.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return;
                     }
 
                     // Tạo DataTable từ List<CategoryDTO>
@@ -395,11 +367,8 @@ namespace ElectronicsStore.Presentation
                         new DataColumn("CategoryName", typeof(string))
                     });
 
-                    if (categoriesToExport != null)
-                    {
-                        foreach (var p in categoriesToExport)
-                            table.Rows.Add(p.ID, p.CategoryName);
-                    }
+                    foreach (var p in categoriesToExport)
+                        table.Rows.Add(p.ID, p.CategoryName);
 
                     using (XLWorkbook wb = new XLWorkbook())
                     {

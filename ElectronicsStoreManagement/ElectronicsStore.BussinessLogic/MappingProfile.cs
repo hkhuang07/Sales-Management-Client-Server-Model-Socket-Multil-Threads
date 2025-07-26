@@ -41,10 +41,15 @@ namespace ElectronicsStore.BusinessLogic
             .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Quantity * src.Price));
             CreateMap<OrderDetailsList, Order_Details>();
 
-           /* CreateMap<Order_Details, OrderDetailsList>()
-                .ForMember(dest => dest.ProductName, opt => opt.Ignore()) // Sẽ gán thủ công
-                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Price * src.Quantity));
-            */
+           CreateMap<Employees, LoginResponseDTO>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.ID))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.Role));
+
+            CreateMap<Employees, LoginRequestDTO>()
+               .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
+               .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.Password));
         }
 
     }

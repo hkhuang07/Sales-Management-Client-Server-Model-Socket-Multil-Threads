@@ -24,14 +24,13 @@ namespace ElectronicsStore.Presentation
 
         private async void btnLogin_Click(object sender, EventArgs e)
         {
-            // Disable buttons to prevent multiple clicks while processing
             btnLogin.Enabled = false;
             btnCancel.Enabled = false;
 
             try
             {
                 string username = txtUserName.Text.Trim();
-                string password = txtPassword.Text; // Không trim password
+                string password = txtPassword.Text;
 
                 if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
                 {
@@ -39,41 +38,40 @@ namespace ElectronicsStore.Presentation
                     return;
                 }
 
-                // Create the request DTO
                 var loginRequest = new LoginRequestDTO
                 {
                     Username = username,
                     Password = password
                 };
 
-                // Send the login request to the server
-                // We expect ServerResponse<LoginResponseDTO> back
-                ServerResponse<LoginResponseDTO> response =
-                    await _clientService.SendRequest<LoginRequestDTO, ServerResponse<LoginResponseDTO>>("AuthenticateUser", loginRequest);
+                // GỌI THẲNG AuthenticateUser, nó sẽ trả về LoginResponseDTO hoặc ném exception
+                LoggedInUser = await _clientService.AuthenticateEmployee(loginRequest);
 
-                if (response.Success && response.Data != null)
+                // Nếu không có exception, nghĩa là đăng nhập thành công
+                if (LoggedInUser != null) // Đảm bảo dữ liệu không null (mặc dù AuthenticateUser sẽ ném nếu không có dữ liệu)
                 {
-                    // Login successful
-                    LoggedInUser = response.Data; // Store user info
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 }
                 else
                 {
-                    // Login failed
-                    MessageBox.Show(response.Message ?? "Invalid username or password.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    txtPassword.Clear(); // Clear password field for security
+                    // Trường hợp này có thể xảy ra nếu server trả về Success=true nhưng Data=null,
+                    // mà trong logic AuthenticateUser đã được xử lý để trả về default(TResponseData) là null cho kiểu tham chiếu.
+                    MessageBox.Show("Login failed. Received empty user data.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtPassword.Clear();
                     txtPassword.Focus();
                 }
             }
             catch (Exception ex)
             {
-                // Handle connection errors or other unexpected exceptions
-                MessageBox.Show($"Error connecting to server or processing login: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Mọi lỗi từ ClientService (kết nối, timeout, server báo lỗi, JSON lỗi)
+                // đều sẽ được ném ra và bắt tại đây.
+                MessageBox.Show($"Login failed: {ex.Message}", "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                txtPassword.Clear();
+                txtPassword.Focus();
             }
             finally
             {
-                // Re-enable buttons
                 btnLogin.Enabled = true;
                 btnCancel.Enabled = true;
             }

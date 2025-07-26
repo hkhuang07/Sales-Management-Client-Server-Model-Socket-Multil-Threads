@@ -12,8 +12,8 @@ namespace ElectronicsStore.DataTransferObject
         public string FullName { get; set; }
         public string Username { get; set; }
         public bool Roles { get; set; }
-        public string Token { get; set; } // JWT token nếu sử dụng
-        public bool Success { get; set; }
-        public string Message { get; set; }
+        ///public string Token { get; set; } // JWT token nếu sử dụng
+        //public bool Success { get; set; }
+        //public string Message { get; set; }
     }
 }

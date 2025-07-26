@@ -522,7 +522,7 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Manufacturers";
             WindowState = FormWindowState.Maximized;
-            Load += Manufacturer_Load;
+            //Load += Manufacturer_Load;
             groupBox2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridView).EndInit();
             groupBox1.ResumeLayout(false);

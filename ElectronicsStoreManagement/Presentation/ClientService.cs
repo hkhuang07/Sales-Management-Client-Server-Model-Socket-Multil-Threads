@@ -41,8 +41,147 @@ namespace ElectronicsStore.Client
             }
             return buffer;
         }
-
         public async Task<TResponseData> SendRequest<TRequestPayload, TResponseData>(string action, TRequestPayload payload)
+        {
+            Console.WriteLine($"Sending request: MethodName='{action}', Payload='{(payload != null ? JsonConvert.SerializeObject(payload) : "null")}'");
+
+            using (TcpClient client = new TcpClient())
+            {
+                try
+                {
+                    var connectTask = client.ConnectAsync(_serverIp, _serverPort);
+                    if (await Task.WhenAny(connectTask, Task.Delay(5000)) != connectTask)
+                    {
+                        throw new TimeoutException("Connection attempt timed out.");
+                    }
+                    if (connectTask.IsFaulted)
+                    {
+                        throw connectTask.Exception.InnerException ?? new Exception("Failed to connect to server.");
+                    }
+
+                    NetworkStream stream = client.GetStream();
+
+                    ClientRequest<TRequestPayload> request = new ClientRequest<TRequestPayload>(action, payload);
+                    string requestJson = JsonConvert.SerializeObject(request);
+                    byte[] requestBytes = Encoding.UTF8.GetBytes(requestJson);
+
+                    byte[] lengthBytes = BitConverter.GetBytes(requestBytes.Length);
+                    await stream.WriteAsync(lengthBytes, 0, lengthBytes.Length);
+                    await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
+                    await stream.FlushAsync();
+
+                    Console.WriteLine($"Sent {requestBytes.Length} bytes for '{action}' request.");
+
+                    byte[] responseLengthBytes = await ReadExactlyAsync(stream, 4);
+                    int responseLength = BitConverter.ToInt32(responseLengthBytes, 0);
+
+                    if (responseLength <= 0)
+                    {
+                        throw new InvalidDataException($"Received invalid response length from server: {responseLength}. This might indicate a server error or corrupted data.");
+                    }
+
+                    byte[] responseBuffer = await ReadExactlyAsync(stream, responseLength);
+                    string responseJson = Encoding.UTF8.GetString(responseBuffer);
+
+                    Console.WriteLine($"Received {responseLength} bytes for '{action}' response: {responseJson}");
+
+                    if (string.IsNullOrEmpty(responseJson))
+                    {
+                        throw new Exception("Received empty JSON response from server. This indicates an issue with server response or network.");
+                    }
+
+                    // Deserialize response to ServerResponse<object> first to inspect Success and Message
+                    // Then deserialize Data based on TResponseData
+                    ServerResponse<object> rawServerResponse;
+                    try
+                    {
+                        rawServerResponse = JsonConvert.DeserializeObject<ServerResponse<object>>(responseJson);
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Console.Error.WriteLine($"JSON Deserialization Error (raw) for action '{action}': {jsonEx.Message}");
+                        Console.Error.WriteLine($"Raw JSON response that failed: {responseJson}");
+                        throw new Exception($"Failed to parse raw server response JSON for action '{action}'. Details: {jsonEx.Message}", jsonEx);
+                    }
+
+                    if (rawServerResponse.Success)
+                    {
+                        // If successful, deserialize Data into the specific TResponseData type
+                        if (rawServerResponse.Data == null)
+                        {
+                            // If Data is null but Success is true, it might be a valid response for some actions (e.g., Delete returning void/bool)
+                            // If TResponseData is a reference type, return default (null). If it's a value type, this needs careful handling.
+                            return default(TResponseData);
+                        }
+                        try
+                        {
+                            // Use rawServerResponse.Data.ToString() to get the JSON string representation of the Data field
+                            // and then deserialize it to TResponseData.
+                            return JsonConvert.DeserializeObject<TResponseData>(rawServerResponse.Data.ToString());
+                        }
+                        catch (JsonException dataJsonEx)
+                        {
+                            Console.Error.WriteLine($"JSON Deserialization Error (Data) for action '{action}': {dataJsonEx.Message}");
+                            Console.Error.WriteLine($"Raw Data JSON: {rawServerResponse.Data}");
+                            throw new Exception($"Failed to parse 'Data' field from server response for action '{action}'. Mismatch in DTOs or corrupted data. Details: {dataJsonEx.Message}", dataJsonEx);
+                        }
+                    }
+                    else // Server indicates an error (rawServerResponse.Success == false)
+                    {
+                        string errorMessage = rawServerResponse.Message ?? "An unknown server error occurred.";
+                        if (rawServerResponse.Data != null)
+                        {
+                            errorMessage += $"\nServer Details: {JsonConvert.SerializeObject(rawServerResponse.Data)}";
+                        }
+                        Console.Error.WriteLine($"Server reported error for action '{action}': {errorMessage}");
+                        throw new Exception($"Server error for action '{action}': {errorMessage}");
+                    }
+                }
+                catch (SocketException sockEx)
+                {
+                    string friendlyMessage;
+                    switch (sockEx.SocketErrorCode)
+                    {
+                        case SocketError.ConnectionRefused:
+                            friendlyMessage = "Connection refused. The server might not be running or the IP/port is incorrect.";
+                            break;
+                        case SocketError.HostNotFound:
+                            friendlyMessage = "Server address not found. Check the server IP address.";
+                            break;
+                        case SocketError.TimedOut:
+                            friendlyMessage = "Connection attempt timed out. The server might be busy or unreachable.";
+                            break;
+                        default:
+                            friendlyMessage = $"A network error occurred (Code: {sockEx.SocketErrorCode}).";
+                            break;
+                    }
+                    Console.Error.WriteLine($"Socket Error for action '{action}': {sockEx.Message} (Code: {sockEx.ErrorCode})");
+                    throw new Exception($"Connection to server failed. {friendlyMessage} Details: {sockEx.Message}", sockEx);
+                }
+                catch (TimeoutException timeEx)
+                {
+                    Console.Error.WriteLine($"Timeout Error for action '{action}': {timeEx.Message}");
+                    throw new Exception($"Operation timed out: {timeEx.Message}", timeEx);
+                }
+                catch (EndOfStreamException eosEx)
+                {
+                    Console.Error.WriteLine($"Network Stream Error for action '{action}': {eosEx.Message}");
+                    throw new Exception($"Incomplete data received from server. This might indicate a network issue or server error. Details: {eosEx.Message}", eosEx);
+                }
+                catch (InvalidDataException idEx)
+                {
+                    Console.Error.WriteLine($"Invalid Data Error for action '{action}': {idEx.Message}");
+                    throw new Exception($"Received invalid data from server. This indicates a protocol mismatch or corrupted data. Details: {idEx.Message}", idEx);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Client Service unexpected error for action '{action}': {ex.Message}");
+                    throw;
+                }
+            }
+        }
+
+        /*public async Task<TResponseData> SendRequest<TRequestPayload, TResponseData>(string action, TRequestPayload payload)
         {
             // Logging request details for debugging
             Console.WriteLine($"Sending request: MethodName='{action}', Payload='{JsonConvert.SerializeObject(payload)}'");
@@ -176,7 +315,7 @@ namespace ElectronicsStore.Client
                     throw; // Re-throw for the caller to handle
                 }
             }
-        }
+        }*/
 
         // --- Specific API methods for Product Management ---
         public async Task<List<ProductDTO>> GetAllProductsAsync()
@@ -278,12 +417,11 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, ProductDTO>("GetProductById", productId);
         }
 
-        // --- Authentication method ---
-        public async Task<LoginResponseDTO> AuthenticateUser(LoginRequestDTO loginRequest)
+        public async Task<LoginResponseDTO> AuthenticateEmployee(LoginRequestDTO loginRequest)
         {
             // The SendRequest method already returns TResponseData, which is LoginResponseDTO in this case.
             // So, you just need to call it directly.
-            return await SendRequest<LoginRequestDTO, LoginResponseDTO>("AuthenticateUser", loginRequest);
+            return await SendRequest<LoginRequestDTO, LoginResponseDTO>("AuthenticateEmployee", loginRequest);
         }
     }
 }

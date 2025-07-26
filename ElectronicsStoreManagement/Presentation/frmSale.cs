@@ -505,7 +505,10 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show("Please select an order to print the invoice.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
+            
+            int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["dataGridViewTextBoxColumn1"].Value);
+           //int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
+
             using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
             {
                 printOrder.ShowDialog();

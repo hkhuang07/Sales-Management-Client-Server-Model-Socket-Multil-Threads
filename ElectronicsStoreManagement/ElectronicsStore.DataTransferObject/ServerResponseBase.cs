@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,13 +14,9 @@ namespace ElectronicsStore.DataTransferObject
         public object Data { get; set; }
         public bool Success { get; set; }
         public string Message { get; set; }
-
         
-
         // Constructor mặc định (cần thiết cho Json.NET)
         public ServerResponseBase() { }
-
-
 
         // Constructor để tạo phản hồi thành công
         public ServerResponseBase(object data, string message = null)
@@ -37,8 +34,6 @@ namespace ElectronicsStore.DataTransferObject
             Data = null; // Gán null cho Data khi có lỗi
         }
 
-
-
         // Phương thức tĩnh tiện ích để tạo phản hồi thành công
         public static ServerResponseBase Ok(object data, string message = null)
         {
@@ -51,4 +46,11 @@ namespace ElectronicsStore.DataTransferObject
             return new ServerResponseBase(message);
         }
     }
+
+   /* public class ServerResponse<T> : ServerResponseBase
+    {
+        // JsonConverter sẽ tự động xử lý Data thành kiểu T
+        [JsonProperty("Data")]
+        public new T Data { get; set; } // new để ẩn thuộc tính Data của lớp cơ sở
+    }*/
 }
