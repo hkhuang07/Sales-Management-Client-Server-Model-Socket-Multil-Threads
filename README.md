@@ -16,7 +16,6 @@ Welcome to the **Sales Management System**! This repository presents a powerful 
    <p><em> Server Console & Client Categories Interface.</em></p>
 </p>
 =======
->>>>>>> 8b581350b631491c957dc638cf079d2fe9429a0d:README.md
 ## ✨ Key Features & Highlights ✨
 
 Here's what makes this project stand out:
