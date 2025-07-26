@@ -9,7 +9,6 @@ Welcome to the **Sales Management System**! This repository presents a powerful 
    <img src="demo/client.jpg" alt="Server Console">
    <p><em> Server Console & Client Interface.</em></p>
 </p>
-<<<<<<< HEAD:README.txt
 <p align="center">
   <h3>Server & Client Categories  (Developing) </h3>
   <img src="demo/server01.jpg" alt="Server Console">
