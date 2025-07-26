@@ -15,7 +15,7 @@ Welcome to the **Sales Management System**! This repository presents a powerful 
    <img src="demo/categories.jpg" alt="Server Console">
    <p><em> Server Console & Client Categories Interface.</em></p>
 </p>
-=======
+
 ## ✨ Key Features & Highlights ✨
 
 Here's what makes this project stand out:
