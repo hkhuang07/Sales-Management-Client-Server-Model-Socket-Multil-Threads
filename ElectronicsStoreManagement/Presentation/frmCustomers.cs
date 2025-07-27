@@ -1,4 +1,8 @@
-﻿using System;
+using ClosedXML.Excel;
+using ElectronicsStore.Client;
+using ElectronicsStore.DataTransferObject;
+using Newtonsoft.Json; // Giữ lại nếu cần cho việc debug hoặc xử lý JSON riêng biệt, nhưng SendRequest đã làm phần lớn việc này
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -8,10 +12,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ClosedXML.Excel;
-using ElectronicsStore.DataTransferObject;
-using Newtonsoft.Json;
-using ElectronicsStore.Client; // Assuming ClientService is in this namespace
 
 namespace ElectronicsStore.Presentation
 {
@@ -23,9 +23,9 @@ namespace ElectronicsStore.Presentation
 
         private BindingSource binding = new BindingSource();
 
-        public frmCustomers(ClientService clientService) // Use ClientService here
+        public frmCustomers(ClientService clientService)
         {
-            _clientService = clientService; // Assign the injected ClientService
+            _clientService = clientService;
             InitializeComponent();
 
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString();
@@ -60,22 +60,24 @@ namespace ElectronicsStore.Presentation
         {
             try
             {
-                // Use _clientService.SendRequest with explicit generic types
-                ServerResponse<List<CustomerDTO>> response = await _clientService.SendRequest<object, ServerResponse<List<CustomerDTO>>>("GetAllCustomer", null);
-                if (response.Success && response.Data != null)
+                // ClientService.SendRequest đã tự xử lý ServerResponse và trả về Data trực tiếp
+                List<CustomerDTO> customers = await _clientService.SendRequest<object, List<CustomerDTO>>("GetAllCustomer", null);
+                if (customers != null)
                 {
-                    binding.DataSource = response.Data;
+                    binding.DataSource = customers;
                     lblMessage.Text = string.Empty;
                 }
                 else
                 {
-                    MessageBox.Show($"Error loading customers: {response.Message ?? "Unknown error"}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // Nếu ClientService.SendRequest trả về null, có thể là không có dữ liệu hoặc lỗi không ném exception
+                    MessageBox.Show("Failed to load customers. No data returned.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     binding.DataSource = new List<CustomerDTO>(); // Clear data if error
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An unexpected error occurred while loading customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Mọi lỗi từ server (Success = false) hoặc lỗi mạng đều đã được ClientService gói gọn và ném ra
+                MessageBox.Show($"Error loading customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 binding.DataSource = new List<CustomerDTO>(); // Clear data if error
             }
         }
@@ -117,40 +119,62 @@ namespace ElectronicsStore.Presentation
                 {
                     try
                     {
-                        // Use _clientService.SendRequest for search
-                        ServerResponse<List<CustomerDTO>> response = await _clientService.SendRequest<string, ServerResponse<List<CustomerDTO>>>("SearchCustomers", keyword);
-                        if (response.Success && response.Data != null)
+                        // ClientService.SendRequest đã tự xử lý ServerResponse và trả về Data trực tiếp
+                        List<CustomerDTO> customers = await _clientService.SendRequest<string, List<CustomerDTO>>("SearchCustomers", keyword);
+                        if (customers != null && customers.Any())
                         {
-                            if (response.Data.Count == 0)
-                            {
-                                lblMessage.Text = "No matching customer found.";
-                            }
-                            else
-                            {
-                                lblMessage.Text = string.Empty;
-                            }
-                            binding.DataSource = response.Data;
+                            lblMessage.Text = string.Empty;
+                            binding.DataSource = customers;
                         }
                         else
                         {
-                            MessageBox.Show($"Error searching customers: {response.Message ?? "Unknown error"}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            binding.DataSource = new List<CustomerDTO>(); // Clear data if error
+                            lblMessage.Text = "No matching customer found.";
+                            binding.DataSource = new List<CustomerDTO>(); // Clear DataGridView
                         }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"An unexpected error occurred during search: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Error searching customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        lblMessage.Text = "Error during search.";
                         binding.DataSource = new List<CustomerDTO>(); // Clear data if error
                     }
                 }
             };
 
-            txtFind.TextChanged += (s, e) =>
+            txtFind.TextChanged += async (s, e) => // Thay đổi để gọi lại LoadCustomers hoặc SearchCustomers
             {
                 lblMessage.Text = string.Empty;
-                // Consider debouncing this or requiring an explicit button click for network operations
-                // For now, keeping the existing behavior of immediate search
-                btnFind.PerformClick();
+                // Có thể debounce hoặc yêu cầu click nút để tránh gửi request liên tục
+                // Hiện tại giữ hành vi tìm kiếm tức thì như Category
+                string keyword = txtFind.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
+                {
+                    await LoadCustomers();
+                }
+                else
+                {
+                    try
+                    {
+                        List<CustomerDTO> customers = await _clientService.SendRequest<string, List<CustomerDTO>>("SearchCustomers", keyword);
+                        if (customers != null && customers.Any())
+                        {
+                            lblMessage.Text = string.Empty;
+                            binding.DataSource = customers;
+                        }
+                        else
+                        {
+                            lblMessage.Text = "No matching customer found.";
+                            binding.DataSource = new List<CustomerDTO>();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Xử lý lỗi trong quá trình tìm kiếm khi TextChanged
+                        Console.WriteLine($"Error during real-time search: {ex.Message}");
+                        lblMessage.Text = "Error during search.";
+                        binding.DataSource = new List<CustomerDTO>();
+                    }
+                }
             };
         }
 
@@ -167,6 +191,7 @@ namespace ElectronicsStore.Presentation
             btnUpdate.Enabled = !value;
             btnDelete.Enabled = !value;
             btnFind.Enabled = !value;
+            btnClear.Enabled = !value; // Đảm bảo nút Clear cũng được vô hiệu hóa/kích hoạt
             btnImport.Enabled = !value;
             btnExport.Enabled = !value;
         }
@@ -219,32 +244,28 @@ namespace ElectronicsStore.Presentation
                     return;
                 }
 
-                // Use ServerResponse<object> as the return type if the server only confirms success/failure
-                ServerResponse<object> response;
+                // SendRequest sẽ ném ngoại lệ nếu có lỗi, nếu không thì coi như thành công
+                // Vì ta không mong đợi dữ liệu trả về cụ thể sau khi thêm/sửa, dùng object làm TResponseData
+                object result = null;
 
                 if (signAdd)
                 {
-                    response = await _clientService.SendRequest<CustomerDTO, ServerResponse<object>>("AddCustomer", dto);
+                    result = await _clientService.SendRequest<CustomerDTO, object>("AddCustomer", dto);
                 }
                 else
                 {
-                    dto.ID = currentCustomerId;
-                    response = await _clientService.SendRequest<CustomerDTO, ServerResponse<object>>("UpdateCustomer", dto);
+                    dto.ID = currentCustomerId; // Gán lại ID cho DTO khi update
+                    result = await _clientService.SendRequest<CustomerDTO, object>("UpdateCustomer", dto);
                 }
 
-                if (response.Success)
-                {
-                    MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    await LoadCustomers();
-                    EnableControls(false);
-                }
-                else
-                {
-                    MessageBox.Show(response.Message ?? "Operation failed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                // Nếu không có ngoại lệ được ném, tức là thành công
+                MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                await LoadCustomers(); // Tải lại dữ liệu sau khi lưu
+                EnableControls(false);
             }
             catch (Exception ex)
             {
+                // Mọi lỗi từ server (Success = false) hoặc lỗi mạng đều đã được ClientService gói gọn và ném ra
                 MessageBox.Show($"Error saving customer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -265,18 +286,12 @@ namespace ElectronicsStore.Presentation
                     if (selectedCustomer != null)
                     {
                         int idToDelete = selectedCustomer.ID;
-                        // Use ServerResponse<object> as the return type for delete
-                        ServerResponse<object> response = await _clientService.SendRequest<int, ServerResponse<object>>("DeleteCustomer", idToDelete);
+                        // SendRequest sẽ ném ngoại lệ nếu server báo lỗi hoặc có vấn đề mạng
+                        await _clientService.SendRequest<int, object>("DeleteCustomer", idToDelete);
 
-                        if (response.Success)
-                        {
-                            MessageBox.Show("Customer deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            await LoadCustomers();
-                        }
-                        else
-                        {
-                            MessageBox.Show(response.Message ?? "Deletion failed.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        // Nếu không có ngoại lệ, tức là thành công
+                        MessageBox.Show("Customer deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadCustomers(); // Tải lại dữ liệu sau khi xóa
                     }
                 }
                 catch (Exception ex)
@@ -289,7 +304,7 @@ namespace ElectronicsStore.Presentation
         private async void btnCancel_Click(object sender, EventArgs e)
         {
             EnableControls(false);
-            await LoadCustomers();
+            await LoadCustomers(); // Tải lại dữ liệu gốc
         }
 
         private void btnClose_Click(object sender, EventArgs e)
@@ -335,7 +350,7 @@ namespace ElectronicsStore.Presentation
                         }
                         if (firstRow)
                         {
-                            MessageBox.Show("Excel file is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            MessageBox.Show("Excel file is empty or contains only headers.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                             return;
                         }
 
@@ -347,38 +362,30 @@ namespace ElectronicsStore.Presentation
                             {
                                 var dto = new CustomerDTO
                                 {
-                                    CustomerName = r["CustomerName"].ToString(),
+                                    CustomerName = r["CustomerName"].ToString(), // Đảm bảo tên cột khớp với Excel
                                     CustomerAddress = r["CustomerAddress"].ToString(),
                                     CustomerPhone = r["CustomerPhone"].ToString(),
                                     CustomerEmail = r["CustomerEmail"].ToString()
                                 };
 
-                                // Send each CustomerDTO to the Server for adding
-                                ServerResponse<object> response = await _clientService.SendRequest<CustomerDTO, ServerResponse<object>>("AddCustomer", dto);
-                                if (response.Success)
-                                {
-                                    successCount++;
-                                }
-                                else
-                                {
-                                    errorCount++;
-                                    Console.WriteLine($"Error importing row '{dto.CustomerName}': {response.Message}");
-                                }
+                                // SendRequest sẽ ném ngoại lệ nếu có lỗi, nếu không thì coi như thành công
+                                await _clientService.SendRequest<CustomerDTO, object>("AddCustomer", dto);
+                                successCount++;
                             }
                             catch (Exception ex)
                             {
                                 errorCount++;
-                                Console.WriteLine($"Error processing row for import: {ex.Message}");
+                                Console.WriteLine($"Error importing row '{r["CustomerName"]}': {ex.Message}");
                             }
                         }
 
                         MessageBox.Show($"{successCount} customers imported successfully. {errorCount} customers failed to import.", "Import Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        await LoadCustomers();
+                        await LoadCustomers(); // Tải lại dữ liệu sau khi import
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    MessageBox.Show($"Error during import: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
             }
         }
@@ -393,16 +400,16 @@ namespace ElectronicsStore.Presentation
             {
                 try
                 {
-                    // Get all customers from Server
-                    ServerResponse<List<CustomerDTO>> response = await _clientService.SendRequest<object, ServerResponse<List<CustomerDTO>>>("GetAllCustomer", null);
-                    if (!response.Success || response.Data == null)
+                    // Lấy toàn bộ danh mục để xuất
+                    List<CustomerDTO> customersToExport = await _clientService.SendRequest<object, List<CustomerDTO>>("GetAllCustomer", null);
+
+                    if (customersToExport == null || !customersToExport.Any())
                     {
-                        MessageBox.Show(response.Message ?? "Failed to retrieve customers for export.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("No customers to export.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
 
-                    var customersToExport = response.Data;
-
+                    // Tạo DataTable từ List<CustomerDTO>
                     DataTable table = new DataTable();
                     table.Columns.AddRange(new DataColumn[5]
                     {
@@ -413,8 +420,8 @@ namespace ElectronicsStore.Presentation
                         new DataColumn("CustomerEmail", typeof(string))
                     });
 
-                    foreach (var c in customersToExport)
-                        table.Rows.Add(c.ID, c.CustomerName, c.CustomerAddress, c.CustomerPhone, c.CustomerEmail);
+                    foreach (var p in customersToExport)
+                        table.Rows.Add(p.ID, p.CustomerName, p.CustomerAddress, p.CustomerPhone, p.CustomerEmail);
 
                     using (XLWorkbook wb = new XLWorkbook())
                     {
@@ -426,9 +433,16 @@ namespace ElectronicsStore.Presentation
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    MessageBox.Show($"Error during export: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
             }
+        }
+
+        // Thêm hàm btnClear_Click nếu nó tồn tại trên form của bạn
+        private async void btnClear_Click(object sender, EventArgs e)
+        {
+            txtFind.Clear();
+            await LoadCustomers(); // Tải lại toàn bộ danh sách
         }
     }
 }
