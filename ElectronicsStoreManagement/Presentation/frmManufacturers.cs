@@ -110,7 +110,7 @@ namespace ElectronicsStore.Presentation
             };
         }
 
-        private async void Manufacturers_Load(object sender, EventArgs e) // Changed method name
+        private async void frmManufacturers_Load(object sender, EventArgs e) // Changed method name
         {
             EnableControls(false);
             await LoadManufacturers(); // Call separate load manufacturer function
@@ -389,5 +389,6 @@ namespace ElectronicsStore.Presentation
         {
             this.Dispose();
         }
+
     }
 }

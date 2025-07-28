@@ -27,6 +27,11 @@ namespace ElectronicsStore.BusinessLogic
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName))
                 .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Manufacturer.ManufacturerName));
 
+           /* CreateMap<Products, ImageUploadRequestDTO>()
+                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Image))
+                .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Image))
+                .ForMember(dest => dest.ImageData, opt => opt.MapFrom(src => src.Image));*/
+
             // Orders → OrderList (hiển thị dữ liệu ra giao diện)
             CreateMap<Orders, OrderList>()
                 .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee.FullName))

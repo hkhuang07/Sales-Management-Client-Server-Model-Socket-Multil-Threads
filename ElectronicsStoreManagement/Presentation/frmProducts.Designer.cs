@@ -463,7 +463,7 @@
             btnChangeImage.TabIndex = 7;
             btnChangeImage.Text = "Change Picture...";
             btnChangeImage.UseVisualStyleBackColor = false;
-            //btnChangeImage.Click += btnChangeImage_Click;
+            btnChangeImage.Click += btnChangeImage_Click;
             // 
             // label6
             // 

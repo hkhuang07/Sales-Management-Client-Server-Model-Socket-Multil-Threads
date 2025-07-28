@@ -333,6 +333,7 @@ namespace ElectronicsStore.Server
                                     responseBase.Message = "Product image updated successfully.";
                                     break;
 
+                                        
                                 // ======================================
                                 // CÁC CASE CHO EMPLOYEE                |
                                 // ======================================

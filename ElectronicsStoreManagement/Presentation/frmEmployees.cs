@@ -18,7 +18,6 @@ namespace ElectronicsStore.Presentation
 {
     public partial class frmEmployees : Form
     {
-        // Removed private readonly ServerClientHandler _serverClient;
         bool signAdd = false;
         int id;
         BindingSource binding = new BindingSource();
@@ -84,38 +83,33 @@ namespace ElectronicsStore.Presentation
                 string keyword = txtFind.Text.Trim().ToLower();
                 try
                 {
-                    ServerResponse<List<EmployeeDTO>> response;
+                    List<EmployeeDTO> employees;
                     if (string.IsNullOrEmpty(keyword))
                     {
-                        response = await _clientService.SendRequest<object, ServerResponse<List<EmployeeDTO>>>("GetAllEmployees", null);
+                        employees = await _clientService.SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
                     }
                     else
                     {
-                        response = await _clientService.SendRequest<string, ServerResponse<List<EmployeeDTO>>>("SearchEmployees", keyword);
+                        employees = await _clientService.SendRequest<string, List<EmployeeDTO>>("SearchEmployees", keyword);
                     }
 
-                    if (response.Success && response.Data != null)
+                    if (employees != null && employees.Any())
                     {
-                        binding.DataSource = response.Data;
-                        dataGridView.DataSource = binding;
-                        if (response.Data.Count == 0)
-                        {
-                            lblMessage.Text = "No matching employee found.";
-                        }
-                        else
-                        {
-                            lblMessage.Text = "";
-                        }
+                        binding.DataSource = employees;
+                        lblMessage.Text = "";
                     }
                     else
                     {
-                        MessageBox.Show($"Error searching employees: {response.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        binding.DataSource = new List<EmployeeDTO>(); // Clear DataGridView on error
+                        binding.DataSource = new List<EmployeeDTO>();
+                        lblMessage.Text = "No matching employee found.";
                     }
+                    dataGridView.DataSource = binding; // Cập nhật DataGridView
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error connecting to server: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Error searching employees: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    binding.DataSource = new List<EmployeeDTO>(); // Clear DataGridView on error
+                    lblMessage.Text = "Error during search.";
                 }
             };
 
@@ -177,14 +171,14 @@ namespace ElectronicsStore.Presentation
         {
             try
             {
-                ServerResponse<List<EmployeeDTO>> response = await _clientService.SendRequest<object, ServerResponse<List<EmployeeDTO>>>("GetAllEmployees", null);
-                if (response.Success && response.Data != null)
+                List<EmployeeDTO> employees = await _clientService.SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
+                if (employees != null)
                 {
-                    binding.DataSource = response.Data;
+                    binding.DataSource = employees;
                 }
                 else
                 {
-                    MessageBox.Show(response.Message ?? "Failed to load employees.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Failed to load employees. No data returned.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     binding.DataSource = new List<EmployeeDTO>(); // Clear data if error
                 }
             }
@@ -256,27 +250,20 @@ namespace ElectronicsStore.Presentation
                     employee.Password = txtEmployeePassword.Text;
                 }
 
-                ServerResponse<object> response;
                 if (signAdd)
                 {
-                    response = await _clientService.SendRequest<EmployeeDTO, ServerResponse<object>>("AddEmployee", employee);
+                    await _clientService.SendRequest<EmployeeDTO, object>("AddEmployee", employee);
                 }
                 else
                 {
                     employee.ID = id; // Ensure ID is set for update
-                    response = await _clientService.SendRequest<EmployeeDTO, ServerResponse<object>>("UpdateEmployee", employee);
+                    await _clientService.SendRequest<EmployeeDTO, object>("UpdateEmployee", employee);
                 }
 
-                if (response.Success)
-                {
-                    MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    await LoadEmployees(); // Reload data
-                    EnableControls(false);
-                }
-                else
-                {
-                    MessageBox.Show(response.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                // If no exception is thrown, it means the operation was successful
+                MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                await LoadEmployees(); // Reload data
+                EnableControls(false);
             }
             catch (Exception ex)
             {
@@ -300,17 +287,11 @@ namespace ElectronicsStore.Presentation
                     if (selectedEmployee != null)
                     {
                         int idToDelete = selectedEmployee.ID;
-                        ServerResponse<object> response = await _clientService.SendRequest<int, ServerResponse<object>>("DeleteEmployee", idToDelete);
+                        await _clientService.SendRequest<int, object>("DeleteEmployee", idToDelete);
 
-                        if (response.Success)
-                        {
-                            MessageBox.Show("Employee deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            await LoadEmployees(); // Reload data
-                        }
-                        else
-                        {
-                            MessageBox.Show(response.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        // If no exception is thrown, it means the operation was successful
+                        MessageBox.Show("Employee deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadEmployees(); // Reload data
                     }
                 }
                 catch (Exception ex)
@@ -398,20 +379,14 @@ namespace ElectronicsStore.Presentation
                                     continue;
                                 }
 
-                                ServerResponse<object> response = await _clientService.SendRequest<EmployeeDTO, ServerResponse<object>>("AddEmployee", dto);
-                                if (response.Success)
-                                {
-                                    successCount++;
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Error importing row (Server response): {response.Message}");
-                                }
+                                await _clientService.SendRequest<EmployeeDTO, object>("AddEmployee", dto);
+                                successCount++;
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine($"Error processing row during import (Client-side): {ex.Message} - Data: {string.Join(", ", r.ItemArray)}");
-                                continue;
+                                // Log the error but continue processing other rows if possible
+                                // Optionally, show a message for each failed row, or summarize at the end.
                             }
                         }
 
@@ -436,14 +411,13 @@ namespace ElectronicsStore.Presentation
             {
                 try
                 {
-                    ServerResponse<List<EmployeeDTO>> response = await _clientService.SendRequest<object, ServerResponse<List<EmployeeDTO>>>("GetAllEmployees", null);
-                    if (!response.Success || response.Data == null)
+                    List<EmployeeDTO> employees = await _clientService.SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
+
+                    if (employees == null)
                     {
-                        MessageBox.Show($"Error retrieving employee data for export: {response.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("No employee data found to export.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
-
-                    var employees = response.Data;
 
                     DataTable table = new DataTable();
                     table.Columns.AddRange(new DataColumn[]
@@ -456,13 +430,11 @@ namespace ElectronicsStore.Presentation
                         new DataColumn("Role", typeof(string)), // Export Role as string for readability
                     });
 
-                    if (employees != null)
+                    foreach (var em in employees)
                     {
-                        foreach (var em in employees)
-                        {
-                            table.Rows.Add(em.ID, em.FullName, em.EmployeePhone, em.EmployeeAddress, em.UserName, em.Role ? "Admin" : "Staff");
-                        }
+                        table.Rows.Add(em.ID, em.FullName, em.EmployeePhone, em.EmployeeAddress, em.UserName, em.Role ? "Admin" : "Staff");
                     }
+
                     using (XLWorkbook wb = new XLWorkbook())
                     {
                         var sheet = wb.Worksheets.Add(table, "Employees");

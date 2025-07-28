@@ -69,10 +69,26 @@
             label7 = new Label();
             groupBox1 = new GroupBox();
             toolStrip1 = new ToolStrip();
+            toolStrip2 = new ToolStrip();
+            toolStripButton1 = new ToolStripButton();
+            toolStripButton2 = new ToolStripButton();
+            toolStripLabel3 = new ToolStripLabel();
+            toolStripTextBox1 = new ToolStripTextBox();
+            toolStripLabel5 = new ToolStripLabel();
+            toolStripButton3 = new ToolStripButton();
+            toolStripLabel7 = new ToolStripLabel();
+            toolStripButton4 = new ToolStripButton();
+            toolStripButton5 = new ToolStripButton();
+            toolStripLabel8 = new ToolStripLabel();
+            toolStripLabel9 = new ToolStripLabel();
+            toolStripButton6 = new ToolStripButton();
+            toolStripButton7 = new ToolStripButton();
+            toolStripButton8 = new ToolStripButton();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView).BeginInit();
             groupBox1.SuspendLayout();
             toolStrip1.SuspendLayout();
+            toolStrip2.SuspendLayout();
             SuspendLayout();
             // 
             // groupBox2
@@ -474,6 +490,7 @@
             // groupBox1
             // 
             groupBox1.BackColor = Color.SkyBlue;
+            groupBox1.Controls.Add(toolStrip2);
             groupBox1.Controls.Add(label7);
             groupBox1.Controls.Add(btnClose);
             groupBox1.Controls.Add(btnCancel);
@@ -509,6 +526,157 @@
             toolStrip1.TabIndex = 0;
             toolStrip1.Text = "toolStrip1";
             // 
+            // toolStrip2
+            // 
+            toolStrip2.BackColor = Color.MidnightBlue;
+            toolStrip2.Dock = DockStyle.Bottom;
+            toolStrip2.Items.AddRange(new ToolStripItem[] { toolStripButton1, toolStripButton2, toolStripLabel3, toolStripTextBox1, toolStripLabel5, toolStripButton3, toolStripLabel7, toolStripButton4, toolStripButton5, toolStripLabel8, toolStripLabel9, toolStripButton6, toolStripButton7, toolStripButton8 });
+            toolStrip2.Location = new Point(3, 194);
+            toolStrip2.Name = "toolStrip2";
+            toolStrip2.Size = new Size(678, 44);
+            toolStrip2.TabIndex = 24;
+            toolStrip2.Text = "toolStrip2";
+            // 
+            // toolStripButton1
+            // 
+            toolStripButton1.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripButton1.Image = (Image)resources.GetObject("toolStripButton1.Image");
+            toolStripButton1.ImageTransparentColor = Color.Magenta;
+            toolStripButton1.Name = "toolStripButton1";
+            toolStripButton1.Size = new Size(23, 41);
+            toolStripButton1.Text = "toolStripButton1";
+            // 
+            // toolStripButton2
+            // 
+            toolStripButton2.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripButton2.Image = (Image)resources.GetObject("toolStripButton2.Image");
+            toolStripButton2.ImageTransparentColor = Color.Magenta;
+            toolStripButton2.Name = "toolStripButton2";
+            toolStripButton2.Size = new Size(23, 41);
+            toolStripButton2.Text = "toolStripButton2";
+            // 
+            // toolStripLabel3
+            // 
+            toolStripLabel3.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            toolStripLabel3.ForeColor = Color.WhiteSmoke;
+            toolStripLabel3.Name = "toolStripLabel3";
+            toolStripLabel3.Size = new Size(47, 41);
+            toolStripLabel3.Text = "Find:";
+            // 
+            // toolStripTextBox1
+            // 
+            toolStripTextBox1.Name = "toolStripTextBox1";
+            toolStripTextBox1.Size = new Size(100, 44);
+            // 
+            // toolStripLabel5
+            // 
+            toolStripLabel5.AutoSize = false;
+            toolStripLabel5.Name = "toolStripLabel5";
+            toolStripLabel5.Size = new Size(15, 30);
+            toolStripLabel5.Text = "          ";
+            // 
+            // toolStripButton3
+            // 
+            toolStripButton3.AutoSize = false;
+            toolStripButton3.BackColor = Color.CornflowerBlue;
+            toolStripButton3.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            toolStripButton3.ForeColor = Color.White;
+            toolStripButton3.Image = (Image)resources.GetObject("toolStripButton3.Image");
+            toolStripButton3.ImageAlign = ContentAlignment.MiddleRight;
+            toolStripButton3.ImageTransparentColor = Color.Magenta;
+            toolStripButton3.Margin = new Padding(7);
+            toolStripButton3.Name = "toolStripButton3";
+            toolStripButton3.Size = new Size(60, 30);
+            toolStripButton3.Text = "Find";
+            toolStripButton3.TextAlign = ContentAlignment.MiddleLeft;
+            toolStripButton3.TextImageRelation = TextImageRelation.TextBeforeImage;
+            // 
+            // toolStripLabel7
+            // 
+            toolStripLabel7.AutoSize = false;
+            toolStripLabel7.Name = "toolStripLabel7";
+            toolStripLabel7.Size = new Size(15, 30);
+            toolStripLabel7.Text = "          ";
+            // 
+            // toolStripButton4
+            // 
+            toolStripButton4.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripButton4.Image = (Image)resources.GetObject("toolStripButton4.Image");
+            toolStripButton4.ImageTransparentColor = Color.Magenta;
+            toolStripButton4.Name = "toolStripButton4";
+            toolStripButton4.Size = new Size(23, 41);
+            toolStripButton4.Text = "toolStripButton3";
+            // 
+            // toolStripButton5
+            // 
+            toolStripButton5.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripButton5.Image = (Image)resources.GetObject("toolStripButton5.Image");
+            toolStripButton5.ImageTransparentColor = Color.Magenta;
+            toolStripButton5.Name = "toolStripButton5";
+            toolStripButton5.Size = new Size(23, 41);
+            toolStripButton5.Text = "toolStripButton4";
+            // 
+            // toolStripLabel8
+            // 
+            toolStripLabel8.AutoSize = false;
+            toolStripLabel8.Name = "toolStripLabel8";
+            toolStripLabel8.Size = new Size(15, 30);
+            toolStripLabel8.Text = "          ";
+            // 
+            // toolStripLabel9
+            // 
+            toolStripLabel9.Font = new Font("Segoe UI", 9.75F, FontStyle.Italic, GraphicsUnit.Point, 0);
+            toolStripLabel9.ForeColor = Color.WhiteSmoke;
+            toolStripLabel9.Name = "toolStripLabel9";
+            toolStripLabel9.Size = new Size(0, 41);
+            // 
+            // toolStripButton6
+            // 
+            toolStripButton6.AutoSize = false;
+            toolStripButton6.BackColor = Color.DodgerBlue;
+            toolStripButton6.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            toolStripButton6.ForeColor = Color.White;
+            toolStripButton6.Image = (Image)resources.GetObject("toolStripButton6.Image");
+            toolStripButton6.ImageAlign = ContentAlignment.MiddleRight;
+            toolStripButton6.ImageTransparentColor = Color.Magenta;
+            toolStripButton6.Margin = new Padding(7);
+            toolStripButton6.Name = "toolStripButton6";
+            toolStripButton6.Size = new Size(80, 30);
+            toolStripButton6.Text = "Import";
+            toolStripButton6.TextAlign = ContentAlignment.MiddleLeft;
+            toolStripButton6.TextImageRelation = TextImageRelation.TextBeforeImage;
+            // 
+            // toolStripButton7
+            // 
+            toolStripButton7.AutoSize = false;
+            toolStripButton7.BackColor = Color.CornflowerBlue;
+            toolStripButton7.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            toolStripButton7.ForeColor = Color.White;
+            toolStripButton7.Image = (Image)resources.GetObject("toolStripButton7.Image");
+            toolStripButton7.ImageAlign = ContentAlignment.MiddleRight;
+            toolStripButton7.ImageTransparentColor = Color.Magenta;
+            toolStripButton7.Margin = new Padding(7);
+            toolStripButton7.Name = "toolStripButton7";
+            toolStripButton7.Size = new Size(80, 30);
+            toolStripButton7.Text = "Export";
+            toolStripButton7.TextAlign = ContentAlignment.MiddleLeft;
+            toolStripButton7.TextImageRelation = TextImageRelation.TextBeforeImage;
+            // 
+            // toolStripButton8
+            // 
+            toolStripButton8.AutoSize = false;
+            toolStripButton8.BackColor = Color.LightSlateGray;
+            toolStripButton8.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            toolStripButton8.ForeColor = Color.White;
+            toolStripButton8.Image = (Image)resources.GetObject("toolStripButton8.Image");
+            toolStripButton8.ImageTransparentColor = Color.Magenta;
+            toolStripButton8.Margin = new Padding(7);
+            toolStripButton8.Name = "toolStripButton8";
+            toolStripButton8.Size = new Size(80, 30);
+            toolStripButton8.Text = "Clear";
+            toolStripButton8.TextAlign = ContentAlignment.MiddleLeft;
+            toolStripButton8.TextImageRelation = TextImageRelation.TextBeforeImage;
+            // 
             // frmManufacturers
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -522,13 +690,15 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Manufacturers";
             WindowState = FormWindowState.Maximized;
-            //Load += Manufacturer_Load;
+            Load += frmManufacturers_Load;
             groupBox2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridView).EndInit();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
+            toolStrip2.ResumeLayout(false);
+            toolStrip2.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -573,5 +743,20 @@
         private Label label7;
         private GroupBox groupBox1;
         private ToolStrip toolStrip1;
+        private ToolStrip toolStrip2;
+        private ToolStripButton toolStripButton1;
+        private ToolStripButton toolStripButton2;
+        private ToolStripLabel toolStripLabel3;
+        private ToolStripTextBox toolStripTextBox1;
+        private ToolStripLabel toolStripLabel5;
+        private ToolStripButton toolStripButton3;
+        private ToolStripLabel toolStripLabel7;
+        private ToolStripButton toolStripButton4;
+        private ToolStripButton toolStripButton5;
+        private ToolStripLabel toolStripLabel8;
+        private ToolStripLabel toolStripLabel9;
+        private ToolStripButton toolStripButton6;
+        private ToolStripButton toolStripButton7;
+        private ToolStripButton toolStripButton8;
     }
 }

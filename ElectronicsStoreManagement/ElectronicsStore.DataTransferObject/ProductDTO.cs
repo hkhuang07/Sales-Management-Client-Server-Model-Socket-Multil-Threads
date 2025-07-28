@@ -19,7 +19,4 @@ namespace ElectronicsStore.DataTransferObject
         public string? CategoryName { get; set; }
         public string? ManufacturerName { get; set; }
     }
-
-    
-
 }
