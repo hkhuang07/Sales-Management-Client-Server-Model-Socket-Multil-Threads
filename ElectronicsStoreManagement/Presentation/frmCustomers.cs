@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿using ClosedXML.Excel;
+=======
+using ClosedXML.Excel;
+>>>>>>> 152c614542913596821ed33fe9be16cc33faa54d
 using ElectronicsStore.Client;
 using ElectronicsStore.DataTransferObject;
 using Newtonsoft.Json; // Giữ lại nếu cần cho việc debug hoặc xử lý JSON riêng biệt, nhưng SendRequest đã làm phần lớn việc này
