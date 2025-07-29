@@ -3,6 +3,7 @@
 ## Project Overview
 
 Welcome to the **Sales Management System**! This repository presents a powerful and intuitive solution specifically crafted for electronics stores. Built on a robust **Client-Server architecture**, this system shines with its ability to handle concurrent operations through **multi-threading**, all while adhering to a clean **3-Layer Architecture** for unparalleled maintainability, scalability, and rock-solid data integrity. At its core, data persistence is masterfully managed using **.NET Entity Framework** and **SQL Server**.
+
 <p align="center">
   <h3>Server & Client Overview  (Developing) </h3>
   <img src="demo/server.jpg" alt="Server Console">
@@ -11,8 +12,9 @@ Welcome to the **Sales Management System**! This repository presents a powerful 
 </p>
 <p align="center">
   <h3>Server & Client Categories  (Developing) </h3>
-  <img src="demo/server01.jpg" alt="Server Console">
-   <img src="demo/categories.jpg" alt="Server Console">
+    <img src="demo/categories.jpg" alt="Server Console">
+    <img src="demo/server_categories01.jpg" alt="Server Console">
+    <img src="demo/server_categories02.jpg" alt="Server Console">
    <p><em> Server Console & Client Categories Interface.</em></p>
 </p>
 
