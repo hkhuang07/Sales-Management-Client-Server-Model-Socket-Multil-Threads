@@ -246,14 +246,11 @@ namespace ElectronicsStore.Client
                 FileName = fileName,
                 ImageData = imageData
             };
-            // The server-side would need a corresponding handler for "UploadProductImage"
             return await SendRequest<ImageUploadRequestDTO, bool>("UploadProductImage", payload);
         }
 
         public async Task<byte[]> GetProductImageAsync(string fileName)
         {
-            // Gửi tên file ảnh đến server và mong đợi một byte[] dữ liệu ảnh trở lại
-            // Server sẽ cần một handler cho action "GetProductImage" trả về byte[]
             return await SendRequest<string, byte[]>("GetProductImage", fileName);
         }
 

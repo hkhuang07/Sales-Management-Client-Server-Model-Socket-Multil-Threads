@@ -325,15 +325,16 @@ namespace ElectronicsStore.Server
                                     responseBase.Message = $"{productSuccessCount} products imported successfully.";
                                     break;
 
-                                case "UpdateProductImage":
+                                /*case "UpdateProductImage":
                                     // Giả định ProductDTO có trường Image
                                     var updateImageDto = JsonConvert.DeserializeObject<ProductDTO>(requestBase.Data.ToString());
                                     productService.UpdateImage(updateImageDto.ID, updateImageDto.Image);
                                     responseBase.Success = true;
                                     responseBase.Message = "Product image updated successfully.";
-                                    break;
+                                    break;*/
+                                
 
-                                        
+
                                 // ======================================
                                 // CÁC CASE CHO EMPLOYEE                |
                                 // ======================================
