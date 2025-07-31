@@ -31,6 +31,16 @@ namespace ElectronicsStore.Presentation
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString() ?? string.Empty; // Xử lý null
             helpProvider1.HelpNamespace = helpURL + "categories.html";
         }
+        public frmCategories()
+        {
+            _clientService = new ClientService("127.0.0.1", 301);
+
+            InitializeComponent();
+
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString() ?? string.Empty; // Xử lý null
+            helpProvider1.HelpNamespace = helpURL + "categories.html";
+        }
+
 
         private void EnableControls(bool value)
         {
@@ -389,5 +399,7 @@ namespace ElectronicsStore.Presentation
         {
             this.Dispose();
         }
+
+       
     }
 }

@@ -505,7 +505,7 @@ namespace ElectronicsStore.Server
                                 // ======================================
                                 // CÁC CASE CHO CUSTOMER
                                 // ======================================
-                                case "GetAllCustomer":
+                                case "GetAllCustomers":
                                     var customers = customerService.GetAll();
                                     responseBase.Success = true;
                                     responseBase.Message = "Customers retrieved successfully.";
@@ -612,6 +612,7 @@ namespace ElectronicsStore.Server
 
                                     responseBase.Success = true;
                                     responseBase.Message = "Order and details updated successfully.";
+                                    responseBase.Data = null; // Đảm bảo Data là null khi Success là true và client mong đợi bool
                                     break;
 
                                 case "DeleteOrder":
@@ -675,14 +676,14 @@ namespace ElectronicsStore.Server
                                     responseBase.Message = $"{orderDetailsToAdd.Count} order details added successfully.";
                                     break;
 
-                                case "BulkUpdateOrderDetails": // Thêm case Bulk Update OrderDetails
+                                /*case "BulkUpdateOrderDetails": // Thêm case Bulk Update OrderDetails
                                     var orderDetailsToUpdate = JsonConvert.DeserializeObject<List<OrderDetailsDTO>>(requestBase.Data.ToString());
                                     orderDetailToUpdate = JsonConvert.DeserializeObject<OrderDetailsDTO>(requestBase.Data.ToString());
 
                                     orderDetailsService.UpdateOrderDetails(orderDetailToUpdate.ID,orderDetailsToUpdate);
                                     responseBase.Success = true;
                                     responseBase.Message = $"{orderDetailsToUpdate.Count} order details updated successfully.";
-                                    break;
+                                    break;*/
 
                                 // ======================================
                                 // CÁC CASE CHO USER (Nếu có User Service riêng)

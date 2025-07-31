@@ -56,13 +56,14 @@
             btnClear = new ToolStripButton();
             groupBox1 = new GroupBox();
             dataGridView = new DataGridView();
+            helpProvider1 = new HelpProvider();
             ID = new DataGridViewTextBoxColumn();
             EmployeeName = new DataGridViewTextBoxColumn();
             CustomerName = new DataGridViewTextBoxColumn();
             Date = new DataGridViewTextBoxColumn();
             TotalPrice = new DataGridViewTextBoxColumn();
+            Note = new DataGridViewTextBoxColumn();
             ViewDetails = new DataGridViewLinkColumn();
-            helpProvider1 = new HelpProvider();
             groupBox3.SuspendLayout();
             groupBox2.SuspendLayout();
             toolStrip1.SuspendLayout();
@@ -345,7 +346,7 @@
             dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView.BackgroundColor = Color.LightBlue;
             dataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView.Columns.AddRange(new DataGridViewColumn[] { ID, EmployeeName, CustomerName, Date, TotalPrice, ViewDetails });
+            dataGridView.Columns.AddRange(new DataGridViewColumn[] { ID, EmployeeName, CustomerName, Date, TotalPrice, Note, ViewDetails });
             dataGridView.Dock = DockStyle.Fill;
             dataGridView.Location = new Point(3, 21);
             dataGridView.MultiSelect = false;
@@ -400,6 +401,13 @@
             TotalPrice.Name = "TotalPrice";
             TotalPrice.ReadOnly = true;
             // 
+            // Note
+            // 
+            Note.DataPropertyName = "Note";
+            Note.HeaderText = "Note";
+            Note.Name = "Note";
+            Note.ReadOnly = true;
+            // 
             // ViewDetails
             // 
             ViewDetails.DataPropertyName = "ViewDetails";
@@ -407,6 +415,7 @@
             ViewDetails.Name = "ViewDetails";
             ViewDetails.ReadOnly = true;
             ViewDetails.Text = "View Details";
+            ViewDetails.UseColumnTextForLinkValue = true;
             // 
             // frmOrders
             // 
@@ -443,12 +452,8 @@
         private Button btnCreate;
         private GroupBox groupBox1;
         private DataGridView dataGridView;
-        private DataGridViewTextBoxColumn ID;
-        private DataGridViewTextBoxColumn EmployeeName;
-        private DataGridViewTextBoxColumn CustomerName;
-        private DataGridViewTextBoxColumn Date;
-        private DataGridViewTextBoxColumn TotalPrice;
-        private DataGridViewLinkColumn ViewDetails;
+        //private DataGridViewLinkColumn Note;
+
         private ToolStripButton toolStripButton1;
         private ToolStrip toolStrip1;
         private ToolStripButton btnBegin;
@@ -467,6 +472,13 @@
         private Label label7;
         private ToolStripButton btnClear;
         private HelpProvider helpProvider1;
+        private DataGridViewTextBoxColumn ID;
+        private DataGridViewTextBoxColumn EmployeeName;
+        private DataGridViewTextBoxColumn CustomerName;
+        private DataGridViewTextBoxColumn Date;
+        private DataGridViewTextBoxColumn TotalPrice;
+        private DataGridViewTextBoxColumn Note;
+        private DataGridViewLinkColumn ViewDetails;
         //private ToolStripButton btnExport;
     }
 }

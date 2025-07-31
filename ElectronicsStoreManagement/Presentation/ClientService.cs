@@ -219,7 +219,12 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<List<ProductDTO>, bool>("BulkAddProducts", products);
         }
-
+        public async Task<List<CategoryDTO>> GetCategoriesByNameAsync(string categoryName)
+        {
+            // Loại bỏ ký tự không mong muốn có thể gây lỗi JSON nếu có.
+            // Hoặc kiểm tra và sanitize chuỗi đầu vào nếu cần.
+            return await SendRequest<string, List<CategoryDTO>>("GetCategoriesByName", categoryName);
+        }
         // --- Specific API methods for Categories and Manufacturers ---
         public async Task<List<CategoryDTO>> GetAllCategoriesAsync()
         {
@@ -276,14 +281,19 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, List<OrderDetailsDTO>>("GetOrderDetailsByOrderId", orderId);
         }
 
-        public async Task<OrderDTO> CreateOrderAsync(OrderWithDetailsDTO orderWithDetails)
+        public async Task<int> CreateOrderAsync(OrderWithDetailsDTO orderWithDetails)
         {
-            return await SendRequest<OrderWithDetailsDTO, OrderDTO>("CreateOrder", orderWithDetails);
+
+            //int newId = await SendRequest<OrderWithDetailsDTO, int>("CreateOrder", orderWithDetails);
+            //return new OrderDTO { ID = newId };
+            return await SendRequest<OrderWithDetailsDTO, int>("CreateOrder", orderWithDetails);
+
+            //return await SendRequest<OrderWithDetailsDTO, OrderDTO>("CreateOrder", orderWithDetails);
         }
 
         public async Task<bool> UpdateOrderWithDetailsAsync(OrderWithDetailsDTO orderWithDetails)
         {
-            return await SendRequest<OrderWithDetailsDTO, bool>("UpdateOrderWithDetails", orderWithDetails);
+            return await SendRequest<OrderWithDetailsDTO, bool>("UpdateOrder", orderWithDetails);
         }
 
         public async Task<bool> DeleteOrderAsync(int orderId)

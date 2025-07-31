@@ -402,7 +402,7 @@ namespace ElectronicsStore.Presentation
                         }
                         else
                         {
-                            OrderDTO newOrder = await _clientService.CreateOrderAsync(orderWithDetails);
+                            /*OrderDTO newOrder = await _clientService.CreateOrderAsync(orderWithDetails);
                             if (newOrder != null && newOrder.ID > 0)
                             {
                                 currentOrderID = newOrder.ID;
@@ -411,7 +411,7 @@ namespace ElectronicsStore.Presentation
                             else
                             {
                                 MessageBox.Show("Failed to create new order.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
+                            }*/
                         }
 
                         if (confirm.chkPrintInvoice.Checked)

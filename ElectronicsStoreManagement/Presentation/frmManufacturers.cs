@@ -32,6 +32,16 @@ namespace ElectronicsStore.Presentation
             helpProvider1.HelpNamespace = helpURL + "manufacturers.html"; // Updated help URL
         }
 
+        public frmManufacturers()
+        {
+           _clientService = new ClientService("127.0.0.1",301);
+
+            InitializeComponent();
+
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString() ?? string.Empty; // Handle null
+            helpProvider1.HelpNamespace = helpURL + "manufacturers.html"; // Updated help URL
+        }
+
         private void EnableControls(bool value)
         {
             btnSave.Enabled = value;
@@ -112,14 +122,23 @@ namespace ElectronicsStore.Presentation
 
         private async void frmManufacturers_Load(object sender, EventArgs e) // Changed method name
         {
+            dataGridView.AutoGenerateColumns = false;
             EnableControls(false);
             await LoadManufacturers(); // Call separate load manufacturer function
             SetupToolStrip(); // Setup ToolStrip after data has loaded
 
             // Clear old DataBindings before adding new ones
-            txtManufacturerName.DataBindings.Clear(); // Changed to txtManufacturerName
+            txtManufacturerName.DataBindings.Clear();
+            txtManufacturerEmail.DataBindings.Clear();
+            txtManufacturerAddress.DataBindings.Clear();
+            txtManufacturerPhone.DataBindings.Clear();
+
             // Add new DataBindings
             txtManufacturerName.DataBindings.Add("Text", binding, "ManufacturerName", false, DataSourceUpdateMode.Never); // Changed to ManufacturerName
+            txtManufacturerEmail.DataBindings.Add("Text", binding, "ManufacturerEmail", false, DataSourceUpdateMode.Never);
+            txtManufacturerPhone.DataBindings.Add("Text", binding, "ManufacturerPhone", false, DataSourceUpdateMode.Never);
+            txtManufacturerAddress.DataBindings.Add("Text", binding, "ManufacturerAddress", false, DataSourceUpdateMode.Never);
+
             dataGridView.DataSource = binding;
 
             // Ensure DataGridView updates display when binding source changes
@@ -184,39 +203,42 @@ namespace ElectronicsStore.Presentation
         {
             try
             {
-                var dto = new ManufacturerDTO { ManufacturerName = txtManufacturerName.Text.Trim() }; // Changed to ManufacturerDTO and ManufacturerName
-
-                // Since SendRequest returns TResponseData (Data extracted from ServerResponse),
-                // here we just need to check if SendRequest was successful
-                // by catching exceptions (if there's a server error, SendRequest will throw an exception).
-                // If no exception, it means success.
-                object result = null; // Use object because server might return null/void for add/edit/delete operations
-
-                if (string.IsNullOrEmpty(dto.ManufacturerName)) // Changed to ManufacturerName
+                // Cập nhật DTO để bao gồm tất cả các trường
+                var dto = new ManufacturerDTO
                 {
-                    MessageBox.Show("Manufacturer Name cannot be empty.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); // Updated message
+                    ManufacturerName = txtManufacturerName.Text.Trim(),
+                    ManufacturerEmail = txtManufacturerEmail.Text.Trim(),
+                    ManufacturerPhone = txtManufacturerPhone.Text.Trim(),
+                    ManufacturerAddress = txtManufacturerAddress.Text.Trim()
+                };
+
+                // Kiểm tra các trường không được rỗng (nếu có)
+                if (string.IsNullOrEmpty(dto.ManufacturerName))
+                {
+                    MessageBox.Show("Manufacturer Name cannot be empty.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
+                // Thêm các kiểm tra validation khác nếu cần cho Email, Phone, Address
+
+                object result = null;
 
                 if (signAdd)
                 {
-                    result = await _clientService.SendRequest<ManufacturerDTO, object>("AddManufacturer", dto); // Changed method name
+                    result = await _clientService.SendRequest<ManufacturerDTO, object>("AddManufacturer", dto);
                 }
                 else
                 {
-                    dto.ID = id; // Assign ID back to DTO when updating
-                    result = await _clientService.SendRequest<ManufacturerDTO, object>("UpdateManufacturer", dto); // Changed method name
+                    dto.ID = id; // Đảm bảo ID được gán lại khi cập nhật
+                    result = await _clientService.SendRequest<ManufacturerDTO, object>("UpdateManufacturer", dto);
                 }
 
-                // If no exception is thrown, it means success
                 MessageBox.Show("Operation successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                await LoadManufacturers(); // Reload data after saving
+                await LoadManufacturers();
                 EnableControls(false);
             }
             catch (Exception ex)
             {
-                // Any error from the server (Success = false) or network error has been encapsulated and thrown by ClientService
-                MessageBox.Show($"Error saving manufacturer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); // Updated message
+                MessageBox.Show($"Error saving manufacturer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -280,7 +302,7 @@ namespace ElectronicsStore.Presentation
                     {
                         IXLWorksheet worksheet = workbook.Worksheet(1);
                         bool firstRow = true;
-                        string readRange = "1:1";
+                        string readRange = ""; // Sẽ được xác định sau khi đọc hàng đầu tiên
                         foreach (IXLRow row in worksheet.RowsUsed())
                         {
                             if (firstRow)
@@ -292,11 +314,15 @@ namespace ElectronicsStore.Presentation
                             }
                             else
                             {
+                                // Đảm bảo số cột của bảng khớp với Excel để tránh lỗi index
                                 table.Rows.Add();
                                 int cellIndex = 0;
                                 foreach (IXLCell cell in row.Cells(readRange))
                                 {
-                                    table.Rows[table.Rows.Count - 1][cellIndex] = cell.Value.ToString();
+                                    if (cellIndex < table.Columns.Count) // Kiểm tra để tránh lỗi index out of range
+                                    {
+                                        table.Rows[table.Rows.Count - 1][cellIndex] = cell.Value.ToString();
+                                    }
                                     cellIndex++;
                                 }
                             }
@@ -313,24 +339,36 @@ namespace ElectronicsStore.Presentation
                         {
                             try
                             {
-                                var dto = new ManufacturerDTO // Changed to ManufacturerDTO
+                                // Đảm bảo bạn đang cố gắng đọc các cột tồn tại từ Excel
+                                // và gán chúng vào DTO
+                                var dto = new ManufacturerDTO
                                 {
-                                    ManufacturerName = r["ManufacturerName"].ToString() // Ensure column name matches Excel
+                                    ManufacturerName = r.Table.Columns.Contains("ManufacturerName") ? r["ManufacturerName"].ToString() : string.Empty,
+                                    ManufacturerEmail = r.Table.Columns.Contains("ManufacturerEmail") ? r["ManufacturerEmail"].ToString() : string.Empty,
+                                    ManufacturerPhone = r.Table.Columns.Contains("ManufacturerPhone") ? r["ManufacturerPhone"].ToString() : string.Empty,
+                                    ManufacturerAddress = r.Table.Columns.Contains("ManufacturerAddress") ? r["ManufacturerAddress"].ToString() : string.Empty
                                 };
 
-                                // SendRequest will throw an exception if there's an error, otherwise it's considered successful
-                                await _clientService.SendRequest<ManufacturerDTO, object>("AddManufacturer", dto); // Changed method name
+                                // Basic validation for name
+                                if (string.IsNullOrEmpty(dto.ManufacturerName))
+                                {
+                                    Console.WriteLine($"Skipping row due to empty ManufacturerName: {string.Join(", ", r.ItemArray)}");
+                                    errorCount++;
+                                    continue;
+                                }
+
+                                await _clientService.SendRequest<ManufacturerDTO, object>("AddManufacturer", dto);
                                 successCount++;
                             }
                             catch (Exception ex)
                             {
                                 errorCount++;
-                                Console.WriteLine($"Error importing row '{r["ManufacturerName"]}': {ex.Message}"); // Changed to ManufacturerName
+                                Console.WriteLine($"Error importing row '{(r.Table.Columns.Contains("ManufacturerName") ? r["ManufacturerName"] : "N/A")}': {ex.Message}");
                             }
                         }
 
-                        MessageBox.Show($"{successCount} manufacturers imported successfully. {errorCount} manufacturers failed to import.", "Import Result", MessageBoxButtons.OK, MessageBoxIcon.Information); // Updated message
-                        await LoadManufacturers(); // Reload data after import
+                        MessageBox.Show($"{successCount} manufacturers imported successfully. {errorCount} manufacturers failed to import.", "Import Result", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadManufacturers();
                     }
                 }
                 catch (Exception ex)
@@ -345,34 +383,35 @@ namespace ElectronicsStore.Presentation
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Title = "Export to Excel file";
             saveFileDialog.Filter = "Excel file|*.xls;*.xlsx";
-            saveFileDialog.FileName = "Manufacturers_" + DateTime.Now.ToShortDateString().Replace("/", "_") + ".xlsx"; // Updated file name
+            saveFileDialog.FileName = "Manufacturers_" + DateTime.Now.ToShortDateString().Replace("/", "_") + ".xlsx";
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    // Get all manufacturers to export
-                    List<ManufacturerDTO> manufacturersToExport = await _clientService.SendRequest<object, List<ManufacturerDTO>>("GetAllManufacturers", null); // Changed method name
+                    List<ManufacturerDTO> manufacturersToExport = await _clientService.SendRequest<object, List<ManufacturerDTO>>("GetAllManufacturers", null);
 
                     if (manufacturersToExport == null || !manufacturersToExport.Any())
                     {
-                        MessageBox.Show("No manufacturers to export.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information); // Updated message
+                        MessageBox.Show("No manufacturers to export.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return;
                     }
 
-                    // Create DataTable from List<ManufacturerDTO>
                     DataTable table = new DataTable();
-                    table.Columns.AddRange(new DataColumn[2]
+                    table.Columns.AddRange(new DataColumn[5] // Cần 5 cột: ID, Name, Email, Phone, Address
                     {
-                        new DataColumn("ID", typeof(int)),
-                        new DataColumn("ManufacturerName", typeof(string)) // Changed to ManufacturerName
+                    new DataColumn("ID", typeof(int)),
+                    new DataColumn("ManufacturerName", typeof(string)),
+                    new DataColumn("ManufacturerEmail", typeof(string)),
+                    new DataColumn("ManufacturerPhone", typeof(string)),
+                    new DataColumn("ManufacturerAddress", typeof(string))
                     });
 
                     foreach (var p in manufacturersToExport)
-                        table.Rows.Add(p.ID, p.ManufacturerName); // Changed to ManufacturerName
+                        table.Rows.Add(p.ID, p.ManufacturerName, p.ManufacturerEmail, p.ManufacturerPhone, p.ManufacturerAddress); // Thêm tất cả các trường
 
                     using (XLWorkbook wb = new XLWorkbook())
                     {
-                        var sheet = wb.Worksheets.Add(table, "Manufacturers"); // Changed sheet name
+                        var sheet = wb.Worksheets.Add(table, "Manufacturers");
                         sheet.Columns().AdjustToContents();
                         wb.SaveAs(saveFileDialog.FileName);
                         MessageBox.Show("Exported data to Excel file successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);

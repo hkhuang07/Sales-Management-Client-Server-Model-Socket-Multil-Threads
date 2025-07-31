@@ -84,17 +84,27 @@ namespace ElectronicsStore.BusinessLogic
             // Xóa chi tiết cũ trước
             _orderdetailsrepository.DeleteByOrderID(orderDto.ID);
 
-            // Cập nhật đơn hàng chính
-            var order = _mapper.Map<Orders>(orderDto);
-            _repository.Update(order); // Chỉ cập nhật đơn hàng, không đụng tới chi tiết
+            // Lấy entity hiện có từ DB để cập nhật, tránh tạo entity mới từ DTO nếu ID không được quản lý tốt bởi ORM.
+            // Điều này đảm bảo bạn cập nhật đúng bản ghi.
+            var existingOrder = _repository.GetById(orderDto.ID);
+            if (existingOrder == null)
+            {
+                throw new Exception($"Order with ID {orderDto.ID} not found for update.");
+            }
+            // Ánh xạ các thuộc tính từ DTO vào entity hiện có
+            _mapper.Map(orderDto, existingOrder);
+            _repository.Update(existingOrder);
 
             // Chèn lại chi tiết mới
-            foreach (var detailDto in details)
+            if (details != null && details.Any()) // Đảm bảo có chi tiết để chèn
             {
-                var detail = _mapper.Map<Order_Details>(detailDto);
-                detail.OrderID = order.ID;
-                detail.ID = 0;
-                _orderdetailsrepository.Insert(detail);
+                foreach (var detailDto in details)
+                {
+                    var detail = _mapper.Map<Order_Details>(detailDto);
+                    detail.OrderID = existingOrder.ID; // Sử dụng ID của đơn hàng đã tồn tại
+                    detail.ID = 0; // Đảm bảo ID là 0 để cơ sở dữ liệu tự tạo ID mới
+                    _orderdetailsrepository.Insert(detail);
+                }
             }
         }
 

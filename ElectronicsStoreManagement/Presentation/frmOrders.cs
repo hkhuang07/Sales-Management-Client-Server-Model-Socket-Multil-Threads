@@ -31,6 +31,13 @@ namespace ElectronicsStore.Presentation
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
             helpProvider1.HelpNamespace = helpURL + "orders.html";
         }
+        public frmOrders()
+        {
+            _clientService = new ClientService("127.0.0.1", 301);
+            InitializeComponent();
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "orders.html";
+        }
 
         private void SetupToolStrip()
         {
@@ -115,41 +122,12 @@ namespace ElectronicsStore.Presentation
             };
         }
 
-        private async void frmOrders_Load(object sender, EventArgs e) // Made async
-        {
-            dataGridView.AutoGenerateColumns = false;
-            try
-            {
-                List<OrderDTO> orderList = await _clientService.GetAllOrdersAsync();
-                binding.DataSource = orderList;
-                SetupToolStrip(); // Setup tool strip after binding source is initialized
-                dataGridView.DataSource = binding; // Bind DataGridView to binding source
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading orders: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnCreate_Click(object sender, EventArgs e)
-        {
-            using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService,0)) // Thêm mới, nên orderID = 0
-            {
-                if (orderDetails.ShowDialog() == DialogResult.OK)
-                {
-                    // This assumes frmOrderDetails handles its own client service calls for add/update.
-                    // After it closes successfully, reload the orders list.
-                    frmOrders_Load(sender, e); // Reload lại danh sách đơn hàng
-                }
-            }
-        }
-
         private void btnPrint_Click(object sender, EventArgs e)
         {
             if (dataGridView.CurrentRow != null)
             {
                 id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
-                using (frmPrintOrder printOrder = new frmPrintOrder(id,_clientService))
+                using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
                 {
                     printOrder.ShowDialog();
                 }
@@ -159,13 +137,161 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show("Please select an order to print.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
+        // Trong frmOrders
+        private async Task LoadOrdersDataAsync()
+        {
+            try
+            {
+                List<OrderDTO> orderList = await _clientService.GetAllOrdersAsync();
+                binding.DataSource = orderList;
+                // Không cần gán lại dataGridView.DataSource = binding; nếu nó đã được gán một lần trong Load
+                // dataGridView.DataSource = binding; 
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading orders: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
+
+        private async void frmOrders_Load(object sender, EventArgs e)
+        {
+            dataGridView.AutoGenerateColumns = false;
+            if (!dataGridView.Columns.Contains("ViewDetails"))
+            {
+                DataGridViewLinkColumn viewDetailsColumn = new DataGridViewLinkColumn();
+                viewDetailsColumn.Name = "ViewDetails";
+                viewDetailsColumn.HeaderText = "Chi tiết";
+                viewDetailsColumn.Text = "View Details";
+                viewDetailsColumn.UseColumnTextForLinkValue = true;
+                viewDetailsColumn.LinkColor = Color.Blue;
+                viewDetailsColumn.TrackVisitedState = false;
+                dataGridView.Columns.Add(viewDetailsColumn);
+            }
+
+            binding.DataSource = new List<OrderDTO>(); // Khởi tạo rỗng để tránh lỗi null reference ban đầu
+            dataGridView.DataSource = binding; // Gán DataGridView với BindingSource một lần duy nhất
+            SetupToolStrip();
+
+            await LoadOrdersDataAsync(); // Lần đầu tiên tải dữ liệu khi form load
+        }
+
+        private async void btnCreate_Click(object sender, EventArgs e)
+        {
+            using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, 0))
+            {
+                if (orderDetails.ShowDialog() == DialogResult.OK)
+                {
+                    // Await the data reload to ensure it completes before continuing
+                    await LoadOrdersDataAsync();
+                }
+            }
+        }
+
+        private async void btnUpdate_Click(object sender, EventArgs e)
+        {
+            if (dataGridView.CurrentRow != null)
+            {
+                id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, id))
+                {
+                    if (orderDetails.ShowDialog() == DialogResult.OK)
+                    {
+                        // Await the data reload
+                        await LoadOrdersDataAsync();
+
+                    }
+                    await LoadOrdersDataAsync();
+
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please select an order to update.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private async void bntDelete_Click(object sender, EventArgs e)
+        {
+            if (dataGridView.CurrentRow == null)
+            {
+                MessageBox.Show("Please select an order to delete.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MessageBox.Show("Are you sure you want to delete this order?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                try
+                {
+                    int idToDelete = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
+                    bool success = await _clientService.DeleteOrderAsync(idToDelete);
+
+                    if (success)
+                    {
+                        MessageBox.Show("Order deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadOrdersDataAsync(); // Await the data reload
+                    }
+                    else
+                    {
+                        MessageBox.Show("Watting for server updating order.", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    await LoadOrdersDataAsync(); // Await the data reload
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error deleting order: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        /*
+         private async void frmOrders_Load(object sender, EventArgs e) // Made async
+        {
+            dataGridView.AutoGenerateColumns = false;
+            try
+            {
+                if (!dataGridView.Columns.Contains("ViewDetails"))
+                {
+                    DataGridViewLinkColumn viewDetailsColumn = new DataGridViewLinkColumn();
+                    viewDetailsColumn.Name = "ViewDetails";
+                    viewDetailsColumn.HeaderText = "Chi tiết"; // Tiêu đề hiển thị cho cột
+                    viewDetailsColumn.Text = "View Details"; // Văn bản liên kết hiển thị trong mỗi ô
+                    viewDetailsColumn.UseColumnTextForLinkValue = true; // Rất quan trọng: Bắt buộc dùng thuộc tính Text để hiển thị
+                    viewDetailsColumn.LinkColor = Color.Blue; // Tùy chỉnh màu sắc liên kết
+                    viewDetailsColumn.TrackVisitedState = false; // Tùy chọn: không thay đổi màu sau khi click
+                    dataGridView.Columns.Add(viewDetailsColumn);
+                }
+                List<OrderDTO> orderList = await _clientService.GetAllOrdersAsync();
+                binding.DataSource = orderList;
+                SetupToolStrip(); // Setup tool strip after binding source is initialized
+                dataGridView.DataSource = binding; // Bind DataGridView to binding source
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading orders: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void btnCreate_Click(object sender, EventArgs e)
+        {
+            using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, 0)) // Thêm mới, nên orderID = 0
+            {
+                if (orderDetails.ShowDialog() == DialogResult.OK)
+                {
+                    // This assumes frmOrderDetails handles its own client service calls for add/update.
+                    // After it closes successfully, reload the orders list.
+                    frmOrders_Load(sender, e); // Reload lại danh sách đơn hàng
+                }
+            }
+        }
+        
         private void btnUpdate_Click(object sender, EventArgs e)
         {
             if (dataGridView.CurrentRow != null)
             {
                 id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
-                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService,id))
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, id))
                 {
                     if (orderDetails.ShowDialog() == DialogResult.OK)
                     {
@@ -211,14 +337,12 @@ namespace ElectronicsStore.Presentation
                     MessageBox.Show($"Error deleting order: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-        }
+        }*/
 
         private void btnExit_Click(object sender, EventArgs e)
         {
             this.Dispose();
         }
-
-        
 
         private void btnExport_Click(object sender, EventArgs e)
         {
@@ -239,7 +363,7 @@ namespace ElectronicsStore.Presentation
                         new DataColumn("CustomerName", typeof(string)),
                         new DataColumn("TotalPrice", typeof(double)),
                         new DataColumn("Note", typeof(string)),
-                        new DataColumn("ViewDetails", typeof(string)), // This column is for UI, might not be needed in export
+                        new DataColumn("ViewDetails", typeof(string))
                     });
 
                     // Use the data currently in the binding source to export
@@ -249,7 +373,7 @@ namespace ElectronicsStore.Presentation
                     {
                         foreach (var ord in ordersToExport)
                         {
-                            table.Rows.Add(ord.ID, ord.Date, ord.EmployeeName, ord.CustomerName, ord.TotalPrice, ord.Note, "View Details"); // Add a placeholder for ViewDetails
+                            table.Rows.Add(ord.ID, ord.Date, ord.EmployeeName, ord.CustomerName, ord.TotalPrice, ord.Note, "ViewDetails"); // Add a placeholder for ViewDetails
                         }
                     }
                     using (XLWorkbook wb = new XLWorkbook())
@@ -272,7 +396,7 @@ namespace ElectronicsStore.Presentation
             if (e.RowIndex >= 0 && e.ColumnIndex == dataGridView.Columns["ViewDetails"].Index)
             {
                 int orderId = Convert.ToInt32(dataGridView.Rows[e.RowIndex].Cells["ID"].Value);
-                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService,orderId))
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId))
                 {
                     orderDetails.ShowDialog();
                 }
@@ -293,5 +417,7 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show($"Error clearing search and reloading orders: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+       
     }
 }

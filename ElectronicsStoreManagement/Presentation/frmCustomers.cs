@@ -31,6 +31,15 @@ namespace ElectronicsStore.Presentation
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString();
             helpProvider1.HelpNamespace = helpURL + "customers.html";
         }
+        public frmCustomers()
+        {
+            _clientService = new ClientService("127.0.0.1", 301);
+            InitializeComponent();
+
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString();
+            helpProvider1.HelpNamespace = helpURL + "customers.html";
+        }
+
 
         private async void Customers_Load(object sender, EventArgs e)
         {

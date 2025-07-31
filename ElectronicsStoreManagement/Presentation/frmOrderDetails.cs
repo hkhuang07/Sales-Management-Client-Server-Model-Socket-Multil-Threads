@@ -1,4 +1,7 @@
 ﻿// ElectronicsStore.Presentation/frmOrderDetails.cs
+using ElectronicsStore.Client; // Use ClientService directly
+using ElectronicsStore.DataTransferObject;
+using Newtonsoft.Json; // Still needed for general JSON operations if you perform them outside ClientService
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,9 +12,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ElectronicsStore.DataTransferObject;
-using ElectronicsStore.Client; // Use ClientService directly
-using Newtonsoft.Json; // Still needed for general JSON operations if you perform them outside ClientService
 
 namespace ElectronicsStore.Presentation
 {
@@ -106,7 +106,7 @@ namespace ElectronicsStore.Presentation
 
         private async void frmOrderDetails_Load(object sender, EventArgs e)
         {
-            await LoadData(); // Await LoadData to ensure comboboxes are populated
+                await LoadData(); // Await LoadData to ensure comboboxes are populated
             dataGridView.AutoGenerateColumns = false;
 
             if (OrderID != 0)
@@ -263,7 +263,7 @@ namespace ElectronicsStore.Presentation
             {
                 numPrice.Value = 0; // Clear price if no product selected
                 return;
-            }
+            }   
 
             int productID = Convert.ToInt32(cboProduct.SelectedValue);
             try
@@ -306,57 +306,52 @@ namespace ElectronicsStore.Presentation
                 return;
             }
 
-            // Create OrderDTO from form data
             var orderDto = new OrderDTO
             {
-                ID = OrderID, // Will be 0 for new orders, existing ID for updates
+                ID = OrderID,
                 EmployeeID = Convert.ToInt32(cboEmployee.SelectedValue),
-                EmployeeName = cboEmployee.Text, // For display/logging purposes if needed
+                EmployeeName = cboEmployee.Text,
                 CustomerID = Convert.ToInt32(cboCustomer.SelectedValue),
-                CustomerName = cboCustomer.Text, // For display/logging purposes if needed
-                Date = DateTime.Now.Date, // Use the date from DateTimePicker
+                CustomerName = cboCustomer.Text,
+                Date = DateTime.Now.Date,
                 Note = txtNote.Text,
-                TotalPrice = orderDetails.Sum(d => (decimal)d.TotalPrice) // Calculate total price from details
+                TotalPrice = orderDetails.Sum(d => (decimal)d.TotalPrice)
             };
 
-            // Create OrderWithDetailsDTO to send to the server
             var orderWithDetailsDto = new OrderWithDetailsDTO
             {
                 Order = orderDto,
                 OrderDetails = orderDetails.ToList()
             };
 
+            string message = "";
+            bool operationSuccess = false;
+
             try
             {
-                if (OrderID != 0)
+                if (OrderID != 0) // Cập nhật đơn hàng
                 {
-                    // Update existing order and its details
-                    bool success = await _clientService.UpdateOrderWithDetailsAsync(orderWithDetailsDto);
-                    if (success)
+                    operationSuccess = await _clientService.UpdateOrderWithDetailsAsync(orderWithDetailsDto);
+                    if (operationSuccess)
                     {
-                        MessageBox.Show("Order updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
-                    }
+                        message = "Order updated successfully!";                    }
                     else
                     {
-                        MessageBox.Show("Failed to update order. Please check server logs for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        message = "Failed to create order. Server did not return a valid order ID.";
                     }
                 }
-                else
+                else // Tạo đơn hàng mới
                 {
-                    // Create new order and its details
-                    var newOrder = await _clientService.CreateOrderAsync(orderWithDetailsDto);
-                    if (newOrder != null && newOrder.ID > 0)
+                    int newOrderId = await _clientService.CreateOrderAsync(orderWithDetailsDto);
+                    if (newOrderId > 0)
                     {
-                        OrderID = newOrder.ID; // Update form's OrderID with the new ID from server
-                        MessageBox.Show($"Order created successfully with ID: {OrderID}!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
+                        OrderID = newOrderId;
+                        message = $"Order created successfully with ID: {OrderID}!";
+                        operationSuccess = true; // Đánh dấu thành công
                     }
                     else
                     {
-                        MessageBox.Show("Failed to create order. Server did not return a valid order ID.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        message = "Failed to create order. Server did not return a valid order ID.";
                     }
                 }
             }
@@ -367,12 +362,35 @@ namespace ElectronicsStore.Presentation
                     fullMessage += "\n\nInner Exception: " + ex.InnerException.Message;
 
                 MessageBox.Show($"An error occurred while saving the order:\n{fullMessage}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return; // Thoát ngay nếu có lỗi trong quá trình giao tiếp
+            }
+            finally
+            {
+                // Đảm bảo UI trở lại trạng thái bình thường (nếu bạn đã enable/disable các control)
+                // Cursor.Current = Cursors.Default;
+                // btnSave.Enabled = true;
+            }
+
+            // Hiển thị MessageBox sau khi đảm bảo thao tác mạng đã hoàn tất
+            if (operationSuccess)
+            {
+                MessageBox.Show(message, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                this.DialogResult = DialogResult.OK; // Đặt DialogResult sau khi thông báo
+                this.Close(); // Đóng form sau khi thông báo và đặt DialogResult
+            }
+            else
+            {
+                MessageBox.Show(message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void btnPrint_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("This feature is not yet implemented.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            int id = OrderID;
+            using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
+            {
+                printOrder.ShowDialog();
+            }
         }
 
         private void btnClose_Click(object sender, EventArgs e)
