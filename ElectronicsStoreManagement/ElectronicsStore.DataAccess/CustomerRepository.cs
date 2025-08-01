@@ -10,9 +10,10 @@ namespace ElectronicsStore.DataAccess
     {
         private readonly ElectronicsStoreContext _context;
 
-        public CustomerRepository()
+        // Constructor đã được cập nhật để nhận DbContext qua Dependency Injection
+        public CustomerRepository(ElectronicsStoreContext context)
         {
-            _context = new ElectronicsStoreContext();
+            _context = context;
         }
 
         // Tra cứu
@@ -24,7 +25,7 @@ namespace ElectronicsStore.DataAccess
         public void Add(Customers customer)
         {
             _context.Customer.Add(customer);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
 
         //Cập nhật
@@ -33,28 +34,25 @@ namespace ElectronicsStore.DataAccess
             var existingCustomer = _context.Customer.Find(customer.ID);
             if (existingCustomer != null)
             {
-                // Cập nhật các thuộc tính cần thiết
                 existingCustomer.CustomerName = customer.CustomerName;
                 existingCustomer.CustomerAddress = customer.CustomerAddress;
                 existingCustomer.CustomerPhone = customer.CustomerPhone;
                 existingCustomer.CustomerEmail = customer.CustomerEmail;
 
                 _context.Customer.Update(existingCustomer);
-                _context.SaveChanges();
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
             else
             {
                 throw new Exception($"Customer with ID = {customer.ID} not found.");
             }
-            _context.Customer.Update(customer);
-            _context.SaveChanges();
         }
 
         //Xóa
         public void Delete(Customers customer)
         {
             _context.Customer.Remove(customer);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
     }
 }

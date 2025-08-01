@@ -13,11 +13,10 @@ namespace ElectronicsStore.DataAccess
         public ElectronicsStoreContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ElectronicsStoreContext>();
-            optionsBuilder.UseSqlServer(
-                "Data Source=.;Database=ElectronsStore;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True"
-            );
+            optionsBuilder.UseSqlServer("Server=.;Database=ElectronsStore;Integrated Security=True;MultipleActiveResultSets=True; TrustServerCertificate=True");
 
             return new ElectronicsStoreContext(optionsBuilder.Options);
         }
     }
 }
+

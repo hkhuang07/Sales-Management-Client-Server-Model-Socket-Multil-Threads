@@ -140,22 +140,6 @@ namespace ElectronicsStore.Presentation
         // Trong frmOrders
         private async Task LoadOrdersDataAsync()
         {
-            try
-            {
-                List<OrderDTO> orderList = await _clientService.GetAllOrdersAsync();
-                binding.DataSource = orderList;
-                // Không cần gán lại dataGridView.DataSource = binding; nếu nó đã được gán một lần trong Load
-                // dataGridView.DataSource = binding; 
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading orders: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-
-        private async void frmOrders_Load(object sender, EventArgs e)
-        {
             dataGridView.AutoGenerateColumns = false;
             if (!dataGridView.Columns.Contains("ViewDetails"))
             {
@@ -168,12 +152,24 @@ namespace ElectronicsStore.Presentation
                 viewDetailsColumn.TrackVisitedState = false;
                 dataGridView.Columns.Add(viewDetailsColumn);
             }
+            try
+            {
+                List<OrderDTO> orderList = await _clientService.GetAllOrdersAsync();
+                binding.DataSource = orderList;
+                SetupToolStrip();
 
-            binding.DataSource = new List<OrderDTO>(); // Khởi tạo rỗng để tránh lỗi null reference ban đầu
-            dataGridView.DataSource = binding; // Gán DataGridView với BindingSource một lần duy nhất
-            SetupToolStrip();
+                dataGridView.DataSource = binding; 
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading orders: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
-            await LoadOrdersDataAsync(); // Lần đầu tiên tải dữ liệu khi form load
+
+        private async void frmOrders_Load(object sender, EventArgs e)
+        {
+            await LoadOrdersDataAsync(); // Lần đầu tiên tải dữ liệu khi form lo
         }
 
         private async void btnCreate_Click(object sender, EventArgs e)
@@ -197,12 +193,9 @@ namespace ElectronicsStore.Presentation
                 {
                     if (orderDetails.ShowDialog() == DialogResult.OK)
                     {
-                        // Await the data reload
+                        // Chỉ gọi một lần nếu thành công
                         await LoadOrdersDataAsync();
-
                     }
-                    await LoadOrdersDataAsync();
-
                 }
             }
             else
@@ -229,14 +222,13 @@ namespace ElectronicsStore.Presentation
                     if (success)
                     {
                         MessageBox.Show("Order deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        await LoadOrdersDataAsync(); // Await the data reload
+                        await LoadOrdersDataAsync(); // Chỉ gọi một lần nếu thành công
                     }
                     else
                     {
-                        MessageBox.Show("Watting for server updating order.", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Thông báo lỗi
+                        MessageBox.Show("Failed to delete order. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-                    await LoadOrdersDataAsync(); // Await the data reload
-
                 }
                 catch (Exception ex)
                 {

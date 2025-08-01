@@ -1,4 +1,9 @@
 ﻿// ElectronicsStore.Presentation/frmProducts.cs
+using ClosedXML.Excel;
+using ElectronicsStore.Client; // Assuming this contains your ClientService and related DTOs
+using ElectronicsStore.DataTransferObject;
+using Newtonsoft.Json;
+using SlugGenerator; // Đảm bảo đã thêm thư viện này hoặc tự implement GenerateSlug
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,11 +15,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ClosedXML.Excel;
-using ElectronicsStore.DataTransferObject;
-using Newtonsoft.Json;
-using SlugGenerator; // Đảm bảo đã thêm thư viện này hoặc tự implement GenerateSlug
-using ElectronicsStore.Client; // Assuming this contains your ClientService and related DTOs
 
 namespace ElectronicsStore.Presentation
 {
@@ -64,6 +64,40 @@ namespace ElectronicsStore.Presentation
             }
         }
 
+        public frmProducts( )
+        {
+            _clientService = new ClientService("127.0.0.1",301);
+            InitializeComponent();
+
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "products.html";
+
+            // Ensure the images folder exists to cache images
+            if (!Directory.Exists(imagesFolder))
+            {
+                Directory.CreateDirectory(imagesFolder);
+            }
+
+            // Create a default image file if it doesn't exist
+            string defaultImagePath = Path.Combine(imagesFolder, "product_default.jpg");
+            if (!File.Exists(defaultImagePath))
+            {
+                // You might want to embed a default image in your resources
+                // or provide a placeholder image with your application.
+                // For demonstration, let's create a simple red square.
+                using (Bitmap bmp = new Bitmap(100, 100))
+                {
+                    using (Graphics g = Graphics.FromImage(bmp))
+                    {
+                        g.FillRectangle(Brushes.Red, 0, 0, 100, 100);
+                        g.DrawString("No Image", new Font("Arial", 10), Brushes.White, 10, 40);
+                    }
+                    bmp.Save(defaultImagePath, System.Drawing.Imaging.ImageFormat.Jpeg);
+                }
+            }
+        }
+
+
         private void EnableControls(bool value)
         {
             btnSave.Enabled = value;
@@ -75,7 +109,7 @@ namespace ElectronicsStore.Presentation
             cboCategory.Enabled = value;
             cboManufacturer.Enabled = value;
             // picImage.Enabled = value; // PictureBox itself is always enabled for display
-            btnChangeImage.Enabled = !value;
+            btnChangeImage.Enabled = value;
 
             btnAdd.Enabled = !value;
             btnUpdate.Enabled = !value;
@@ -151,33 +185,36 @@ namespace ElectronicsStore.Presentation
             btnFind.Click += async (s, e) =>
             {
                 string keyword = txtFind.Text.Trim();
-                try
+                if (string.IsNullOrEmpty(keyword))
                 {
-                    List<ProductDTO> filteredProducts;
-                    if (string.IsNullOrEmpty(keyword))
+                    await LoadProductData(); // Load all manufacturers from server
+                }
+                else
+                {
+                    try
                     {
-                        filteredProducts = await _clientService.GetAllProductsAsync();
+                        List<ProductDTO> filteredProducts;
+                        List<ProductDTO> products = await _clientService.SendRequest<string, List<ProductDTO>>("SearchProducts", keyword); // Changed method name
+
+                        if (products != null && products.Any())
+                        {
+                            lblMessage.Text = ""; // Clear message if results found
+                            binding.DataSource = products;
+                        }
+                        else
+                        {
+                            lblMessage.Text = "No matching product found."; // Updated message
+                            binding.DataSource = new List<ProductDTO>(); // Clear DataGridView
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        filteredProducts = await _clientService.SearchProductsAsync(keyword);
+                        MessageBox.Show($"Error searching products: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        lblMessage.Text = "Error during search.";
                     }
 
-                    binding.DataSource = filteredProducts;
-                    dataGridView.DataSource = binding; // Re-assign DataSource
-                    if (filteredProducts == null || filteredProducts.Count == 0)
-                    {
-                        lblMessage.Text = "No matching product found.";
-                    }
-                    else
-                    {
-                        lblMessage.Text = "";
-                    }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error connecting to server or searching products: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                   
             };
 
             txtFind.TextChanged += (s, e) =>
@@ -185,6 +222,39 @@ namespace ElectronicsStore.Presentation
                 lblMessage.Text = ""; // Clear the message label when text changes
             };
         }
+
+
+        private async Task DownloadImageAndSaveToCache(string fileName)
+        {
+            try
+            {
+                // Kiểm tra xem tên file có rỗng không
+                if (string.IsNullOrEmpty(fileName))
+                {
+                    return;
+                }
+
+                string fullPath = Path.Combine(imagesFolder, fileName);
+
+                // Gọi phương thức mới trên ClientService để lấy mảng byte của ảnh
+                byte[] imageData = await _clientService.GetProductImageAsync(fileName);
+        
+                if (imageData != null && imageData.Length > 0)
+                {
+                    // Lưu mảng byte vào file trong thư mục cache
+                    await File.WriteAllBytesAsync(fullPath, imageData);
+                    Console.WriteLine($"Image '{fileName}' downloaded and saved to cache.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi hoặc thông báo nhưng không làm gián đoạn luồng chính
+                Console.WriteLine($"Error downloading image '{fileName}': {ex.Message}");
+            }
+
+
+        }
+
 
         /// <summary>
         /// Loads product data, categories, and manufacturers into the form controls.
@@ -225,6 +295,26 @@ namespace ElectronicsStore.Presentation
 
                 dataGridView.DataSource = binding; // Assign DataSource to DataGridView from BindingSource
 
+                var imageDownloadTasks = new List<Task>();
+                string defaultImagePath = Path.Combine(imagesFolder, "product_default.jpg");
+                // Lặp qua danh sách sản phẩm để kiểm tra và tải ảnh
+                foreach (var product in list)
+                {
+                    if (!string.IsNullOrEmpty(product.Image) && product.Image != "product_default.jpg")
+                    {
+                        string fullPath = Path.Combine(imagesFolder, product.Image);
+                        // Chỉ tải về nếu file chưa tồn tại trong cache
+                        if (!File.Exists(fullPath))
+                        {
+                            // Thêm task tải ảnh vào danh sách
+                            imageDownloadTasks.Add(DownloadImageAndSaveToCache(product.Image));
+                        }
+                    }
+                }
+                await Task.WhenAll(imageDownloadTasks);
+                dataGridView.Refresh();
+
+
                 // Handle displaying images for PictureBox when selected product changes
                 // Remove old event to avoid multiple subscriptions
                 binding.CurrentChanged -= Binding_CurrentChanged;
@@ -238,6 +328,13 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show($"Error connecting to server: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private async void frmProducts_Load(object sender, EventArgs e)
+        {
+            await LoadProductData();
+        }
+
+      
 
         // New method to handle image for PictureBox (product details)
         private async void Binding_CurrentChanged(object sender, EventArgs e)
@@ -289,7 +386,7 @@ namespace ElectronicsStore.Presentation
                             {
                                 picImage.Image = System.Drawing.Image.FromStream(ms);
                             }
-                        }
+                        } //<--Dòng lỗi
                         else
                         {
                             // Fallback to default if image data is empty or null
@@ -326,10 +423,7 @@ namespace ElectronicsStore.Presentation
             }
         }
 
-        private async void frmProducts_Load(object sender, EventArgs e)
-        {
-            await LoadProductData();
-        }
+      
 
         private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
@@ -447,6 +541,41 @@ namespace ElectronicsStore.Presentation
                 try
                 {
                     int idToDelete = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+
+                    // Gọi phương thức delete trên client
+                    bool success = await _clientService.DeleteProductAsync(idToDelete);
+
+                    if (success)
+                    {
+                        MessageBox.Show("Product deleted successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadProductData(); // Tải lại dữ liệu sau khi xóa thành công
+                    }
+                    else
+                    {
+                        // Thông báo lỗi nếu server báo xóa không thành công (ví dụ: không tìm thấy ID)
+                        MessageBox.Show("Failed to delete product. Product may not exist.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Bắt lỗi kết nối hoặc xử lý từ server
+                    MessageBox.Show($"Error connecting to server or processing request: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+        /*private async void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (dataGridView.CurrentRow == null)
+            {
+                MessageBox.Show("Please select a product to delete.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            if (MessageBox.Show("Are you sure you want to delete this product?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                try
+                {
+                    int idToDelete = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
                     bool success = await _clientService.DeleteProductAsync(idToDelete);
 
                     if (success)
@@ -464,7 +593,7 @@ namespace ElectronicsStore.Presentation
                     MessageBox.Show($"Error connecting to server or processing request: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-        }
+        }*/
 
         // Event handler for the "Change Image" button
         private void btnChangeImage_Click(object sender, EventArgs e)
@@ -497,8 +626,141 @@ namespace ElectronicsStore.Presentation
                 }
             }
         }
-
         private async void btnSave_Click(object sender, EventArgs e)
+        {
+            // Bắt đầu với một biến để kiểm soát việc reload dữ liệu
+            bool shouldReloadData = false;
+
+            try
+            {
+                // Basic validation
+                if (string.IsNullOrWhiteSpace(txtProductName.Text))
+                {
+                    MessageBox.Show("Product Name cannot be empty.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (cboCategory.SelectedValue == null)
+                {
+                    MessageBox.Show("Please select a Category.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (cboManufacturer.SelectedValue == null)
+                {
+                    MessageBox.Show("Please select a Manufacturer.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                ProductDTO dto = new ProductDTO
+                {
+                    ProductName = txtProductName.Text,
+                    Description = txtDescription.Text,
+                    Price = (int)numPrice.Value,
+                    Quantity = (int)numQuantity.Value,
+                    CategoryID = Convert.ToInt32(cboCategory.SelectedValue),
+                    ManufacturerID = Convert.ToInt32(cboManufacturer.SelectedValue)
+                };
+
+                // Biến để lưu tên file ảnh cuối cùng sẽ được gán cho DTO
+                string imageFileNameToSave = "product_default.jpg";
+
+                // Determine the image filename to send with the DTO for initial save/update
+                if (_selectedImageFileName != null && _selectedImageBytes != null)
+                {
+                    // If a new image is selected, generate a slugged filename for the DTO
+                    imageFileNameToSave = _selectedImageFileName.GenerateSlug() + Path.GetExtension(_selectedImageFileName);
+                    dto.Image = imageFileNameToSave;
+                }
+                else if (!signAdd && binding.Current is ProductDTO currentBoundProduct)
+                {
+                    // If updating and no new image is selected, retain the existing image filename
+                    imageFileNameToSave = currentBoundProduct.Image;
+                    dto.Image = imageFileNameToSave;
+                }
+                else
+                {
+                    // For new products with no image selected, or if existing product has no image
+                    dto.Image = imageFileNameToSave;
+                }
+
+                ProductDTO resultProduct = null;
+                string successMessage = "";
+
+                // Tách khối try-catch cho việc lưu thông tin sản phẩm
+                try
+                {
+                    if (signAdd)
+                    {
+                        resultProduct = await _clientService.AddProductAsync(dto);
+                        id = resultProduct.ID; // Get the new ID to upload the image
+                        successMessage = "Product added successfully.";
+                    }
+                    else
+                    {
+                        dto.ID = id; // Ensure ID is set for update operation
+                        resultProduct = await _clientService.UpdateProductAsync(dto);
+                        successMessage = "Product updated successfully.";
+                    }
+
+                    // Đặt cờ để reload dữ liệu sau khi lưu thành công thông tin sản phẩm
+                    shouldReloadData = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error saving product details: {ex.Message}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return; // Dừng lại nếu lưu thông tin thất bại
+                }
+
+                // Tách khối try-catch cho việc upload hình ảnh
+                if (_selectedImageBytes != null && _selectedImageBytes.Length > 0)
+                {
+                    try
+                    {
+                        // Gọi phương thức tải ảnh lên server
+                        bool uploadSuccess = await _clientService.UploadProductImageAsync(resultProduct.ID, imageFileNameToSave, _selectedImageBytes);
+
+                        if (!uploadSuccess)
+                        {
+                            // Trường hợp server xử lý thành công việc lưu thông tin nhưng lỗi khi lưu ảnh
+                            MessageBox.Show("Failed to upload product image to server. Product details were saved, but image might be missing.", "Image Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else
+                        {
+                            // Nếu lưu thông tin và ảnh đều thành công
+                            MessageBox.Show(successMessage, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                    catch (Exception imageUploadEx)
+                    {
+                        // Bắt ngoại lệ trong quá trình upload ảnh
+                        MessageBox.Show($"Product details saved, but an error occurred during image upload: {imageUploadEx.Message}", "Image Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    // Nếu không có ảnh mới được chọn, chỉ hiển thị thông báo thành công
+                    MessageBox.Show(successMessage, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
+                // Important: clear the selected image data after saving/uploading
+                _selectedImageBytes = null;
+                _selectedImageFileName = null;
+            }
+            catch (Exception ex)
+            {
+                // Bắt lỗi tổng quát, ví dụ lỗi kết nối
+                MessageBox.Show($"An unexpected error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // Reload dữ liệu chỉ khi đã lưu thành công thông tin sản phẩm
+                if (shouldReloadData)
+                {
+                    await LoadProductData();
+                }
+                EnableControls(false);
+            }
+        }
+        /*private async void btnSave_Click(object sender, EventArgs e)
         {
             try
             {
@@ -593,7 +855,7 @@ namespace ElectronicsStore.Presentation
             {
                 MessageBox.Show($"Error connecting to server or processing request: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
+        }*/
 
         private async void btnCancel_Click(object sender, EventArgs e)
         {
@@ -776,3 +1038,9 @@ namespace ElectronicsStore.Presentation
         }
     }
 }
+
+
+
+
+
+

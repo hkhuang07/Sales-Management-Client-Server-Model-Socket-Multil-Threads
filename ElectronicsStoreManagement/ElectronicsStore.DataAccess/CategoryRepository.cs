@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ElectronicsStore.DataAccess
 {
@@ -11,9 +9,10 @@ namespace ElectronicsStore.DataAccess
     {
         private readonly ElectronicsStoreContext _context;
 
-        public CategoryRepository()
+        // Constructor đã được cập nhật để nhận DbContext qua Dependency Injection
+        public CategoryRepository(ElectronicsStoreContext context)
         {
-            _context = new ElectronicsStoreContext();
+            _context = context;
         }
 
         //Tra cứu
@@ -21,16 +20,11 @@ namespace ElectronicsStore.DataAccess
 
         public Categories? GetById(int id) => _context.Category.Find(id);
 
-        /*public CategoryDTO GetById(int id)
-        {
-            return _context.Category.Find(x => x.Id == id);
-        }*/
-
         //Thêm mới
         public void Add(Categories category)
         {
             _context.Category.Add(category);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
 
         //Cập nhật
@@ -39,10 +33,9 @@ namespace ElectronicsStore.DataAccess
             var existingCategory = _context.Category.Find(category.ID);
             if (existingCategory != null)
             {
-                // Cập nhật các thuộc tính cần thiết
                 existingCategory.CategoryName = category.CategoryName;
                 _context.Category.Update(existingCategory);
-                _context.SaveChanges();
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
             else
             {
@@ -54,8 +47,7 @@ namespace ElectronicsStore.DataAccess
         public void Delete(Categories category)
         {
             _context.Category.Remove(category);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
-
     }
 }

@@ -1,18 +1,21 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ElectronicsStore.DataAccess
 {
-    public class OrderRepository : IOrderRepository, IDisposable
+    public class OrderRepository : IOrderRepository
     {
         private readonly ElectronicsStoreContext _context;
 
-        public OrderRepository()
+        public OrderRepository(ElectronicsStoreContext context)
         {
-            _context = new ElectronicsStoreContext();
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        // Tra cứu với chi tiết
+        // Tra cứu với chi tiết.
+        // Giả định tên navigation property là 'Order_Details'
         public List<Orders> GetAllWithDetails()
         {
             return _context.Order
@@ -21,10 +24,11 @@ namespace ElectronicsStore.DataAccess
                 .Include(o => o.ViewDetails)
                 .ToList();
         }
+
         // Tra cứu không có chi tiết
         public List<Orders> GetAll() => _context.Order.ToList();
 
-        // Tra cứu theo ID
+        // Tra cứu theo ID với chi tiết
         public Orders? GetById(int id) => _context.Order
             .Include(o => o.ViewDetails)
             .FirstOrDefault(o => o.ID == id);
@@ -49,53 +53,26 @@ namespace ElectronicsStore.DataAccess
                 .ToList();
         }
 
-        //Thêm mới
         public void Add(Orders entity)
         {
             _context.Order.Add(entity);
-            _context.SaveChanges();
         }
 
-        //Thêm mới đơn hàng không có chi tiết đơn hàng
         public int Insert(Orders order)
         {
             _context.Order.Add(order);
-            _context.SaveChanges();
-            return order.ID; // EF sẽ tự cập nhật ID sau khi SaveChanges nếu ID là identity
+            // Vẫn trả về ID, việc lưu sẽ do service đảm nhiệm
+            return order.ID;
         }
 
-        //Cập nhật
         public void Update(Orders order)
         {
-            var existingOrder = _context.Order.Find(order.ID);
-            if (existingOrder != null)
-            {
-                // Cập nhật các thuộc tính cần thiết
-                existingOrder.Date = order.Date;
-                existingOrder.EmployeeID = order.EmployeeID;
-                existingOrder.CustomerID = order.CustomerID;
-                existingOrder.Note = order.Note;
-                //existingOrder.Order_Details = order.Order_Details;
-                _context.Order.Update(existingOrder);
-                _context.SaveChanges();
-            }
-            else
-            {
-                throw new Exception($"Order with ID = {order.ID} not found.");
-            }    
-                
+            _context.Order.Update(order);
         }
 
-        //Xóa
         public void Delete(Orders order)
         {
             _context.Order.Remove(order);
-            _context.SaveChanges();
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
         }
     }
 }

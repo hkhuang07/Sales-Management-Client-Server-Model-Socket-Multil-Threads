@@ -45,7 +45,7 @@ namespace ElectronicsStore.Presentation
                 };
 
                 // GỌI THẲNG AuthenticateUser, nó sẽ trả về LoginResponseDTO hoặc ném exception
-                LoggedInUser = await _clientService.AuthenticateEmployee(loginRequest);
+                LoggedInUser = await _clientService.Authenticate(loginRequest);
 
                 // Nếu không có exception, nghĩa là đăng nhập thành công
                 if (LoggedInUser != null) // Đảm bảo dữ liệu không null (mặc dù AuthenticateUser sẽ ném nếu không có dữ liệu)

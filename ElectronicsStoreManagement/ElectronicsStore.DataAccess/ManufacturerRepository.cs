@@ -2,32 +2,29 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ElectronicsStore.DataAccess
 {
-    public class ManufacturerRepository: IManufacturerRepository
+    public class ManufacturerRepository : IManufacturerRepository
     {
         private readonly ElectronicsStoreContext _context;
 
-        public ManufacturerRepository()
+        // Constructor đã được cập nhật để nhận DbContext qua Dependency Injection
+        public ManufacturerRepository(ElectronicsStoreContext context)
         {
-            _context = new ElectronicsStoreContext();
+            _context = context;
         }
-
 
         //Tra cứu
         public List<Manufacturers> GetAll() => _context.Manufacturer.ToList();
 
         public Manufacturers? GetById(int id) => _context.Manufacturer.Find(id);
 
-
         //Thêm mới
         public void Add(Manufacturers manufacturer)
         {
             _context.Manufacturer.Add(manufacturer);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
 
         //Cập nhật
@@ -36,28 +33,25 @@ namespace ElectronicsStore.DataAccess
             var existingManufacture = _context.Manufacturer.Find(manufacturer.ID);
             if (existingManufacture != null)
             {
-                // Cập nhật các thuộc tính cần thiết
                 existingManufacture.ManufacturerName = manufacturer.ManufacturerName;
                 existingManufacture.ManufacturerAddress = manufacturer.ManufacturerAddress;
                 existingManufacture.ManufacturerPhone = manufacturer.ManufacturerPhone;
                 existingManufacture.ManufacturerEmail = manufacturer.ManufacturerEmail;
 
                 _context.Manufacturer.Update(existingManufacture);
-                _context.SaveChanges();
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
             else
             {
                 throw new Exception($"Manufacturer with ID = {manufacturer.ID} not found.");
             }
-            _context.Manufacturer.Update(manufacturer);
-            _context.SaveChanges();
         }
 
         //Xóa
         public void Delete(Manufacturers manufacturer)
         {
             _context.Manufacturer.Remove(manufacturer);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
     }
 }

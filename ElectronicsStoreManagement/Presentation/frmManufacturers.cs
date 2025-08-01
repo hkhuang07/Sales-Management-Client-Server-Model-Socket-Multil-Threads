@@ -37,7 +37,6 @@ namespace ElectronicsStore.Presentation
            _clientService = new ClientService("127.0.0.1",301);
 
             InitializeComponent();
-
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString() ?? string.Empty; // Handle null
             helpProvider1.HelpNamespace = helpURL + "manufacturers.html"; // Updated help URL
         }
@@ -47,6 +46,9 @@ namespace ElectronicsStore.Presentation
             btnSave.Enabled = value;
             btnCancel.Enabled = value;
             txtManufacturerName.Enabled = value; // Changed to txtManufacturerName
+            txtManufacturerAddress.Enabled = value;
+            txtManufacturerEmail.Enabled = value;
+            txtManufacturerPhone.Enabled = value;
 
             btnAdd.Enabled = !value;
             btnEdit.Enabled = !value;
@@ -57,7 +59,7 @@ namespace ElectronicsStore.Presentation
 
         private void SetupToolStrip()
         {
-            btnBegin.Click += (s, e) =>
+            btnFirst.Click += (s, e) =>
             {
                 if (binding.Count > 0)
                     binding.MoveFirst();
@@ -117,6 +119,11 @@ namespace ElectronicsStore.Presentation
             txtFind.TextChanged += (s, e) =>
             {
                 lblMessage.Text = ""; // Clear the message label when text changes
+            };
+            btnClear.Click += async (s, e) =>
+            {
+                txtFind.Clear();
+                await LoadManufacturers(); 
             };
         }
 
@@ -280,11 +287,11 @@ namespace ElectronicsStore.Presentation
             await LoadManufacturers(); // Reload original data
         }
 
-        private async void btnClear_Click(object sender, EventArgs e)
+        /*private async void btnClear_Click(object sender, EventArgs e)
         {
             txtFind.Clear();
             await LoadManufacturers(); // Reload entire list
-        }
+        }*/
 
         // --- Import/Export functions ---
         private async void btnImport_Click(object sender, EventArgs e)

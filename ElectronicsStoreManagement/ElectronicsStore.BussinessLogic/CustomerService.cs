@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using AutoMapper;
 using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
@@ -14,11 +12,14 @@ namespace ElectronicsStore.BusinessLogic
     {
         private readonly ICustomerRepository _repository;
         private readonly IMapper _mapper;
+        private readonly UnitOfWork _unitOfWork;
 
-        public CustomerService(IMapper mapper)
+        // Constructor đã được cập nhật để nhận ICustomerRepository qua DI
+        public CustomerService(ICustomerRepository repository, IMapper mapper, UnitOfWork unitOfWork)
         {
-            _repository = new CustomerRepository();
+            _repository = repository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
         //Kiểm tra dữ liệu đầu vào
@@ -39,10 +40,11 @@ namespace ElectronicsStore.BusinessLogic
             if (!IsValidEmail(dto.CustomerEmail))
                 throw new ArgumentException("Invalid email address.");
         }
+
         private bool IsValidPhone(string phone)
         {
             if (string.IsNullOrWhiteSpace(phone)) return false;
-            var regex = new Regex(@"^(0|\+84)(\d{9})$"); // hỗ trợ 090xxxxxxx, +849xxxxxxxx
+            var regex = new Regex(@"^(0|\+84)(\d{9})$");
             return regex.IsMatch(phone);
         }
 
@@ -59,18 +61,21 @@ namespace ElectronicsStore.BusinessLogic
                 return false;
             }
         }
+
         //Tra cứu
         public List<CustomerDTO> GetAll()
         {
             var list = _repository.GetAll();
             return _mapper.Map<List<CustomerDTO>>(list);
         }
+
         public CustomerDTO GetById(int id)
         {
             var entity = _repository.GetById(id);
             if (entity == null) throw new Exception($"Customer not found with ID = {id}.");
             return _mapper.Map<CustomerDTO>(entity);
         }
+
         public List<CustomerDTO> GetByName(string name)
         {
             var list = _repository.GetAll().Where(c => c.CustomerName.Contains(name)).ToList();
@@ -84,6 +89,8 @@ namespace ElectronicsStore.BusinessLogic
 
             var entity = _mapper.Map<Customers>(dto);
             _repository.Add(entity);
+            _unitOfWork.SaveChanges();
+
         }
 
         //Cập nhật
@@ -99,6 +106,8 @@ namespace ElectronicsStore.BusinessLogic
             entity.CustomerPhone = dto.CustomerPhone;
             entity.CustomerEmail = dto.CustomerEmail;
             _repository.Update(entity);
+            _unitOfWork.SaveChanges();
+
         }
 
         //Xóa
@@ -107,6 +116,8 @@ namespace ElectronicsStore.BusinessLogic
             var entity = _repository.GetById(id);
             if (entity == null) throw new Exception($"Customer not found with ID = {id}.");
             _repository.Delete(entity);
+            _unitOfWork.SaveChanges();
+
         }
     }
 }

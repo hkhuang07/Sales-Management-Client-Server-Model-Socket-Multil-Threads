@@ -1,5 +1,7 @@
-﻿using System;
+﻿// File: ElectronicsStore.BusinessLogic/OrderService.cs (Đã cập nhật)
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using AutoMapper;
 using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
@@ -12,19 +14,21 @@ namespace ElectronicsStore.BusinessLogic
         private readonly IOrderRepository _repository;
         private readonly IOrderDetailsRepository _orderdetailsrepository;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork; // Thay đổi từ UnitOfWork sang IUnitOfWork để tuân thủ DI
 
-        public OrderService(IMapper mapper)
+        public OrderService(IOrderRepository orderRepository, IOrderDetailsRepository orderDetailsRepository, IMapper mapper, IUnitOfWork unitOfWork)
         {
-            _repository = new OrderRepository();
-            _orderdetailsrepository = new OrderDetailsRepository();
+            _repository = orderRepository;
+            _orderdetailsrepository = orderDetailsRepository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
-        //Tra cứu
-        public List<OrderList> GetAllList()
+        // --- TRA CỨU ---
+        public List<OrderDTO> GetAllList()
         {
             var orders = _repository.GetAllWithDetails();
-            return _mapper.Map<List<OrderList>>(orders);
+            return _mapper.Map<List<OrderDTO>>(orders);
         }
 
         public OrderDTO? GetById(int id)
@@ -33,35 +37,47 @@ namespace ElectronicsStore.BusinessLogic
             return order != null ? _mapper.Map<OrderDTO>(order) : null;
         }
 
-        //Thêm mới
-        //thêm mới đơn hàng không có chi tiết đơn hàng
-        public void Add(OrderDTO dto)   
+        // --- THÊM MỚI ---
+        public void Add(OrderDTO dto)
         {
             if (dto == null) throw new ArgumentException("Order data cannot be null.");
             var entity = _mapper.Map<Orders>(dto);
             _repository.Add(entity);
+            _unitOfWork.SaveChanges();
         }
 
-        //thêm mới đơn hàng và chi tiết đơn hàng
         public int CreateOrder(OrderDTO orderDto, List<OrderDetailsDTO> details)
         {
-            var order = _mapper.Map<Orders>(orderDto);
-            order.Date = DateTime.Now;
-
-            int orderId = _repository.Insert(order);
-
-            foreach (var detailDto in details)
+            using (var transaction = _unitOfWork.BeginTransaction()) // Sử dụng UnitOfWork
             {
-                var detail = _mapper.Map<Order_Details>(detailDto);
-                detail.OrderID = orderId;
-                _orderdetailsrepository.Insert(detail);
-            }
+                try
+                {
+                    var order = _mapper.Map<Orders>(orderDto);
+                    order.Date = DateTime.Now;
 
-            return orderId;
+                    _repository.Insert(order);
+                    _unitOfWork.SaveChanges(); // Lưu Order trước để có Order.ID
+
+                    foreach (var detailDto in details)
+                    {
+                        var detail = _mapper.Map<Order_Details>(detailDto);
+                        detail.OrderID = order.ID;
+                        _orderdetailsrepository.Insert(detail);
+                    }
+
+                    _unitOfWork.SaveChanges(); // Lưu OrderDetails
+                    transaction.Commit();
+                    return order.ID;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
         }
 
-        //Cập nhật
-        //Cập nhật đơn hàng không có chi tiết đơn hàng
+        // --- CẬP NHẬT ---
         public void Update(int id, OrderDTO dto)
         {
             if (dto == null) throw new ArgumentException("Order data cannot be null.");
@@ -70,69 +86,78 @@ namespace ElectronicsStore.BusinessLogic
             if (existing == null)
                 throw new Exception($"Order not found with ID = {id}.");
 
-            // Cập nhật thông tin cơ bản
-            existing.Date = dto.Date;                                                               
-            existing.EmployeeID = dto.EmployeeID;
-            existing.CustomerID = dto.CustomerID;
-            existing.Note = dto.Note;
-
+            _mapper.Map(dto, existing);
             _repository.Update(existing);
+            _unitOfWork.SaveChanges(); // Sử dụng UnitOfWork
         }
-        //Cập nhật đơn hàng và chi tiết đơn hàng
+
         public void UpdateOrder(OrderDTO orderDto, List<OrderDetailsDTO> details)
         {
-            // Xóa chi tiết cũ trước
-            _orderdetailsrepository.DeleteByOrderID(orderDto.ID);
-
-            // Lấy entity hiện có từ DB để cập nhật, tránh tạo entity mới từ DTO nếu ID không được quản lý tốt bởi ORM.
-            // Điều này đảm bảo bạn cập nhật đúng bản ghi.
-            var existingOrder = _repository.GetById(orderDto.ID);
-            if (existingOrder == null)
+            using (var transaction = _unitOfWork.BeginTransaction()) // Sử dụng UnitOfWork
             {
-                throw new Exception($"Order with ID {orderDto.ID} not found for update.");
-            }
-            // Ánh xạ các thuộc tính từ DTO vào entity hiện có
-            _mapper.Map(orderDto, existingOrder);
-            _repository.Update(existingOrder);
-
-            // Chèn lại chi tiết mới
-            if (details != null && details.Any()) // Đảm bảo có chi tiết để chèn
-            {
-                foreach (var detailDto in details)
+                try
                 {
-                    var detail = _mapper.Map<Order_Details>(detailDto);
-                    detail.OrderID = existingOrder.ID; // Sử dụng ID của đơn hàng đã tồn tại
-                    detail.ID = 0; // Đảm bảo ID là 0 để cơ sở dữ liệu tự tạo ID mới
-                    _orderdetailsrepository.Insert(detail);
+                    var existingOrder = _repository.GetById(orderDto.ID);
+                    if (existingOrder == null)
+                    {
+                        throw new Exception($"Order with ID {orderDto.ID} not found for update.");
+                    }
+
+                    _mapper.Map(orderDto, existingOrder);
+                    _repository.Update(existingOrder);
+
+                    _orderdetailsrepository.DeleteByOrderID(orderDto.ID);
+
+                    if (details != null && details.Any())
+                    {
+                        var newDetails = _mapper.Map<List<Order_Details>>(details);
+                        foreach (var detail in newDetails)
+                        {
+                            detail.OrderID = existingOrder.ID;
+                            _orderdetailsrepository.Insert(detail);
+                        }
+                    }
+
+                    _unitOfWork.SaveChanges(); // Sử dụng UnitOfWork
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
         }
 
-        //Xóa
-        public void Delete(int id)
-        {
-            var entity = _repository.GetById(id);
-            if (entity == null)
-                throw new Exception($"Order not found with ID = {id}.");        
-
-            _repository.Delete(entity);
-        }
+        // --- XÓA ---
         public void DeleteOrderAndDetails(int orderId)
         {
-            // Xóa tất cả chi tiết đơn hàng trước
-            _orderdetailsrepository.DeleteByOrderID(orderId); // Sử dụng phương thức của OrderDetailsRepository
-
-            // Sau đó, xóa đơn hàng chính
-            var orderToDelete = _repository.GetById(orderId);
-            if (orderToDelete == null)
+            using (var transaction = _unitOfWork.BeginTransaction()) // Sử dụng UnitOfWork
             {
-                throw new Exception($"Order with ID {orderId} not found for deletion.");
+                try
+                {
+                    _orderdetailsrepository.DeleteByOrderID(orderId);
+                    var orderToDelete = _repository.GetById(orderId);
+                    if (orderToDelete == null)
+                    {
+                        throw new Exception($"Order with ID {orderId} not found for deletion.");
+                    }
+                    _repository.Delete(orderToDelete);
+
+                    _unitOfWork.SaveChanges(); // Sử dụng UnitOfWork
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
             }
-            _repository.Delete(orderToDelete);
         }
 
-        //Hàm mới 
-        public List<OrderDTO> GetOrdersByCustomerId(int customerId) {
+        // Các phương thức khác giữ nguyên
+        public List<OrderDTO> GetOrdersByCustomerId(int customerId)
+        {
             if (customerId <= 0)
             {
                 throw new ArgumentException("Customer ID must be a positive integer.");
@@ -140,7 +165,8 @@ namespace ElectronicsStore.BusinessLogic
             var orders = _repository.GetByCustomerId(customerId);
             return _mapper.Map<List<OrderDTO>>(orders);
         }
-        public List<OrderDTO> GetOrdersByEmployeeId(int employeeId) {
+        public List<OrderDTO> GetOrdersByEmployeeId(int employeeId)
+        {
             if (employeeId <= 0)
             {
                 throw new ArgumentException("Employee ID must be a positive integer.");

@@ -25,14 +25,13 @@ namespace ElectronicsStore.DataAccess
         {
         }
 
-        // Nếu muốn giữ OnConfiguring cho chạy thực tế
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlServer("Data Source=.;Database=ElectronsStore;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True");
-            }
-        }
+        // Xóa hoặc comment phương thức OnConfiguring để chỉ sử dụng chuỗi kết nối từ Program.cs
+        // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        // {
+        //     if (!optionsBuilder.IsConfigured)
+        //     {
+        //         optionsBuilder.UseSqlServer("Data Source=.;Database=ElectronsStore;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True");
+        //     }
+        // }
     }
-
 }

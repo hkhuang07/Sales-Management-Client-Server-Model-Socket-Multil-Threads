@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AutoMapper;
 using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
@@ -13,11 +11,15 @@ namespace ElectronicsStore.BusinessLogic
     {
         private readonly ICategoryRepository _repository;
         private readonly IMapper _mapper;
+        private readonly UnitOfWork _unitOfWork; // Thêm UnitOfWork
 
-        public CategoryService(IMapper mapper)
+
+        // Constructor đã được cập nhật để nhận ICategoryRepository qua DI
+        public CategoryService(CategoryRepository repository, IMapper mapper, UnitOfWork unitOfWork)
         {
-            _repository = new CategoryRepository();
+            _repository = repository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
         //Tra cứu 
@@ -26,26 +28,20 @@ namespace ElectronicsStore.BusinessLogic
             var list = _repository.GetAll();
             return _mapper.Map<List<CategoryDTO>>(list);
         }
-        /*public List<CategoryDTO> GetCategories()
-        {
-            var list = _repository.GetAll();
-            return _mapper.Map<List<CategoryDTO>>(list);
-        } */
+
         public CategoryDTO GetById(int id)
         {
             var entity = _repository.GetById(id);
-            if (entity == null) throw new Exception("Category not found!");
+            if (entity == null)
+                throw new Exception("Category not found!");
             return _mapper.Map<CategoryDTO>(entity);
         }
+
         public List<CategoryDTO> GetByName(string name)
         {
             var list = _repository.GetAll().Where(c => c.CategoryName.Contains(name)).ToList();
             return _mapper.Map<List<CategoryDTO>>(list);
         }
-        /*public CategoryDTO GetById(int id) 
-        { Logic lấy danh mục theo ID 
-            return null; 
-        }*/
 
         //Thêm mới
         public void Add(CategoryDTO dto)
@@ -55,6 +51,7 @@ namespace ElectronicsStore.BusinessLogic
 
             var entity = _mapper.Map<Categories>(dto);
             _repository.Add(entity);
+            _unitOfWork.SaveChanges();
         }
 
         //Cập nhật
@@ -65,6 +62,8 @@ namespace ElectronicsStore.BusinessLogic
 
             entity.CategoryName = dto.CategoryName;
             _repository.Update(entity);
+            _unitOfWork.SaveChanges();
+
         }
 
         //Xóa
@@ -73,8 +72,7 @@ namespace ElectronicsStore.BusinessLogic
             var entity = _repository.GetById(id);
             if (entity == null) throw new Exception("Category not found!");
             _repository.Delete(entity);
+            _unitOfWork.SaveChanges();
         }
-
     }
-
 }

@@ -15,7 +15,7 @@ namespace ElectronicsStore.DataAccess
 
         public DatabaseRepository()
         {
-            _connectionString = "Data Source=.;Database=ElectronsStore;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+            _connectionString = "Data Source=.\\SQLEXPRESS;Database=ElectronsStore;Integrated Security=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
             // Hoặc lấy từ appsettings.json hay App.config nếu có
         }
 

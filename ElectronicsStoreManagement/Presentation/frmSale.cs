@@ -135,7 +135,8 @@ namespace ElectronicsStore.Presentation
                 }
                 else
                 {
-                    filteredProducts = await _clientService.SearchProductsAsync(keyword);
+                    filteredProducts = await _clientService.SendRequest<string, List<ProductDTO>>("SearchProducts", keyword); // Changed method name
+
                 }
 
                 if (filteredProducts != null && filteredProducts.Any())

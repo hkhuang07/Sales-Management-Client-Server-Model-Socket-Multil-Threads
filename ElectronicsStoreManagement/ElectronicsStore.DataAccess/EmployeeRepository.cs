@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace ElectronicsStore.DataAccess
 {
-    public class EmployeeRepository: IEmployeeRepository
+    public class EmployeeRepository : IEmployeeRepository
     {
         private readonly ElectronicsStoreContext _context;
 
-        public EmployeeRepository()
+        // Constructor đã được cập nhật để nhận DbContext qua Dependency Injection
+        public EmployeeRepository(ElectronicsStoreContext context)
         {
-            _context = new ElectronicsStoreContext();
+            _context = context;
         }
 
         // Tra cứu
@@ -24,16 +25,12 @@ namespace ElectronicsStore.DataAccess
         {
             return _context.Employee.FirstOrDefault(e => e.UserName == userName);
         }
-        /*public Employees? GetbyEmail(string email) // NEW: Implementation for GetbyEmail
-        {
-            return _context.Employee.FirstOrDefault(e => e. == email); // Assuming Employees entity has an 'Email' property
-        }*/
 
         //Thêm mới
         public void Add(Employees employee)
         {
             _context.Employee.Add(employee);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
 
         //Cập nhật
@@ -42,7 +39,6 @@ namespace ElectronicsStore.DataAccess
             var existingEmployee = _context.Employee.Find(employee.ID);
             if (existingEmployee != null)
             {
-                // Cập nhật các thuộc tính cần thiết
                 existingEmployee.FullName = employee.FullName;
                 existingEmployee.EmployeeAddress = employee.EmployeeAddress;
                 existingEmployee.EmployeePhone = employee.EmployeePhone;
@@ -50,61 +46,30 @@ namespace ElectronicsStore.DataAccess
                 existingEmployee.Password = employee.Password;
 
                 _context.Employee.Update(existingEmployee);
-                _context.SaveChanges();
-                _context.Entry(employee).Reload();
-
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
             else
             {
                 throw new Exception($"Employee with ID = {employee.ID} not found.");
             }
-
         }
 
         public void UpdatePassword(int id, string hashedPassword)
         {
             var employee = _context.Employee.Find(id);
-            if (employee != null)   
+            if (employee != null)
             {
                 employee.Password = hashedPassword;
-                _context.SaveChanges();
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
-            _context.Entry(employee).Reload();
-
+            // _context.Entry(employee).Reload(); // Dòng này có thể gây lỗi nếu employee là null
         }
 
         //Xóa
         public void Delete(Employees employee)
         {
             _context.Employee.Remove(employee);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
-
-        /*public void SetPasswordResetToken(int employeeId, string token, DateTime expiry)
-        {
-            var employee = _context.Employee.Find(employeeId);
-            if (employee != null)
-            {
-                employee.PasswordResetToken = token;
-                employee.PasswordResetTokenExpiry = expiry;
-                _context.SaveChanges();
-            }
-            else
-            {
-                throw new Exception($"Employee with ID = {employeeId} not found to set password reset token.");
-            }
-        }
-
-        public void ClearPasswordResetToken(int employeeId)
-        {
-            var employee = _context.Employee.Find(employeeId);
-            if (employee != null)
-            {
-                employee.PasswordResetToken = null;
-                employee.PasswordResetTokenExpiry = null;
-                _context.SaveChanges();
-            }
-            // No error if not found, as it might already be cleared or employee doesn't exist
-        }*/
     }
 }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace ElectronicsStore.DataAccess
@@ -10,36 +8,27 @@ namespace ElectronicsStore.DataAccess
     public class ProductRepository : IProductRepository
     {
         private readonly ElectronicsStoreContext _context;
-        public ProductRepository()
+
+        // Constructor đã được cập nhật để nhận DbContext qua Dependency Injection
+        public ProductRepository(ElectronicsStoreContext context)
         {
-            _context = new ElectronicsStoreContext();
+            _context = context;
         }
-    
+
         public List<Products> GetAll() => _context.Product.ToList();
 
         public Products? GetById(int id) => _context.Product.Find(id);
 
-        public Products? GetByName(string key) => _context.Product.Find(key);
+        public Products? GetByName(string key) => _context.Product.FirstOrDefault(p => p.ProductName == key); // Đã sửa lỗi: Find() không hoạt động với chuỗi
+
         public void Add(Products product)
         {
             if (_context.Product.Any(p => p.ID == product.ID))
                 throw new Exception($"Product with ID = {product.ID} already exists.");
 
             _context.Product.Add(product);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
-
-        /*public void Add(Products product)
-        {
-            _context.Product.Add(product);
-            _context.SaveChanges();
-        }
-
-        public void Update(Products product)
-        {
-            _context.Product.Update(product);
-            _context.SaveChanges();
-        }*/
 
         public void Update(Products product)
         {
@@ -50,12 +39,11 @@ namespace ElectronicsStore.DataAccess
                 existingProduct.ProductName = product.ProductName;
                 existingProduct.Price = product.Price;
                 existingProduct.Quantity = product.Quantity;
-                //existingProduct.Image = product.Image;
                 existingProduct.Description = product.Description;
                 existingProduct.ManufacturerID = product.ManufacturerID;
                 existingProduct.CategoryID = product.CategoryID;
                 _context.Product.Update(existingProduct);
-                _context.SaveChanges();
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
             else
             {
@@ -63,7 +51,6 @@ namespace ElectronicsStore.DataAccess
             }
         }
 
-        //Cập nhật hình ảnh
         public void UpdateImage(int productId, string imageFileName)
         {
             if (string.IsNullOrWhiteSpace(imageFileName) || imageFileName.Length > 250)
@@ -73,7 +60,7 @@ namespace ElectronicsStore.DataAccess
             {
                 existingProduct.Image = imageFileName;
                 _context.Product.Update(existingProduct);
-                _context.SaveChanges();
+                // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
             }
             else
             {
@@ -84,17 +71,15 @@ namespace ElectronicsStore.DataAccess
         public void Delete(Products product)
         {
             _context.Product.Remove(product);
-            _context.SaveChanges();
+            // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
 
         public List<Products> GetAllWithCategoryManufacturer()
         {
-            using var context = new ElectronicsStoreContext(); // Replace AppDbContext with ElectronicsStoreContext
-            return context.Product
-                         .Include(p => p.Category)
-                         .Include(p => p.Manufacturer)
-                         .ToList();
+            return _context.Product
+                           .Include(p => p.Category)
+                           .Include(p => p.Manufacturer)
+                           .ToList();
         }
-
     }
 }

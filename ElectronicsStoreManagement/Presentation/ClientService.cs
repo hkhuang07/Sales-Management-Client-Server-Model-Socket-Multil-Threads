@@ -1,12 +1,12 @@
-﻿// ElectronicsStore.Client/ClientService.cs
+﻿using ElectronicsStore.DataTransferObject;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using ElectronicsStore.DataTransferObject; // Make sure this namespace is correct for your DTOs
 
 namespace ElectronicsStore.Client
 {
@@ -22,32 +22,41 @@ namespace ElectronicsStore.Client
         }
 
         // Helper method to read a specific number of bytes from the stream
-        private async Task<byte[]> ReadExactlyAsync(NetworkStream stream, int bytesToRead)
+        private async Task<byte[]> ReadExactlyAsync(NetworkStream stream, int bytesToRead, CancellationToken cancellationToken = default)
         {
             byte[] buffer = new byte[bytesToRead];
             int totalBytesRead = 0;
-            int bytesRead;
 
-            while (totalBytesRead < bytesToRead &&
-                   (bytesRead = await stream.ReadAsync(buffer, totalBytesRead, bytesToRead - totalBytesRead)) > 0)
+            // Gán một giá trị mặc định cho bytesRead để tránh lỗi "use of unassigned local variable"
+            int bytesRead = 0;
+
+            while (totalBytesRead < bytesToRead)
             {
+                // Kiểm tra cancellation token trước khi thực hiện thao tác I/O
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Sử dụng ReadAsync với CancellationToken
+                bytesRead = await stream.ReadAsync(buffer, totalBytesRead, bytesToRead - totalBytesRead, cancellationToken);
+
+                if (bytesRead == 0)
+                {
+                    // Kết nối bị đóng đột ngột.
+                    throw new EndOfStreamException($"Connection closed prematurely. Expected {bytesToRead} bytes, but only received {totalBytesRead}.");
+                }
+
                 totalBytesRead += bytesRead;
             }
 
-            if (totalBytesRead < bytesToRead)
-            {
-                // This means the stream ended prematurely
-                throw new EndOfStreamException($"Expected {bytesToRead} bytes but only read {totalBytesRead} bytes.");
-            }
             return buffer;
         }
-
+        // Phương thức chung để gửi yêu cầu và nhận phản hồi
         public async Task<TResponseData> SendRequest<TRequestPayload, TResponseData>(string action, TRequestPayload payload)
         {
             Console.WriteLine($"Sending request: MethodName='{action}', Payload='{(payload != null ? JsonConvert.SerializeObject(payload) : "null")}'");
 
             using (TcpClient client = new TcpClient())
             {
+               
                 try
                 {
                     var connectTask = client.ConnectAsync(_serverIp, _serverPort);
@@ -62,6 +71,7 @@ namespace ElectronicsStore.Client
 
                     NetworkStream stream = client.GetStream();
 
+                    // Sử dụng ClientRequest<TRequestPayload> cho tất cả các yêu cầu
                     ClientRequest<TRequestPayload> request = new ClientRequest<TRequestPayload>(action, payload);
                     string requestJson = JsonConvert.SerializeObject(request);
                     byte[] requestBytes = Encoding.UTF8.GetBytes(requestJson);
@@ -73,6 +83,7 @@ namespace ElectronicsStore.Client
 
                     Console.WriteLine($"Sent {requestBytes.Length} bytes for '{action}' request.");
 
+                    //byte[] responseLengthBytes = await ReadExactlyAsync(stream, 4, cts.Token);
                     byte[] responseLengthBytes = await ReadExactlyAsync(stream, 4);
                     int responseLength = BitConverter.ToInt32(responseLengthBytes, 0);
 
@@ -91,12 +102,11 @@ namespace ElectronicsStore.Client
                         throw new Exception("Received empty JSON response from server. This indicates an issue with server response or network.");
                     }
 
-                    // Deserialize response to ServerResponse<object> first to inspect Success and Message
-                    // Then deserialize Data based on TResponseData
-                    ServerResponse<object> rawServerResponse;
+                    // Sử dụng ServerResponse<TResponseData> thay cho ServerResponse<object> để deserialize trực tiếp
+                    ServerResponse<TResponseData> serverResponse;
                     try
                     {
-                        rawServerResponse = JsonConvert.DeserializeObject<ServerResponse<object>>(responseJson);
+                        serverResponse = JsonConvert.DeserializeObject<ServerResponse<TResponseData>>(responseJson);
                     }
                     catch (JsonException jsonEx)
                     {
@@ -105,34 +115,24 @@ namespace ElectronicsStore.Client
                         throw new Exception($"Failed to parse raw server response JSON for action '{action}'. Details: {jsonEx.Message}", jsonEx);
                     }
 
-                    if (rawServerResponse.Success)
+                    if (serverResponse.Success)
                     {
-                        // If successful, deserialize Data into the specific TResponseData type
-                        if (rawServerResponse.Data == null)
+                        if (serverResponse.Data == null && !EqualityComparer<TResponseData>.Default.Equals(default(TResponseData), serverResponse.Data))
                         {
-                            // If Data is null but Success is true, it might be a valid response for some actions (e.g., Delete returning void/bool)
-                            // If TResponseData is a reference type, return default (null). If it's a value type, this needs careful handling.
-                            return default(TResponseData);
+                            // trường hợp data của TResponseData không thể là null.
+                            // ví dụ TResponseData là List, int,.. nhưng data trả về là null
+                            throw new InvalidDataException("Server response indicates success but data is null.");
                         }
-                        try
-                        {
-                            // Use rawServerResponse.Data.ToString() to get the JSON string representation of the Data field
-                            // and then deserialize it to TResponseData.
-                            return JsonConvert.DeserializeObject<TResponseData>(rawServerResponse.Data.ToString());
-                        }
-                        catch (JsonException dataJsonEx)
-                        {
-                            Console.Error.WriteLine($"JSON Deserialization Error (Data) for action '{action}': {dataJsonEx.Message}");
-                            Console.Error.WriteLine($"Raw Data JSON: {rawServerResponse.Data}");
-                            throw new Exception($"Failed to parse 'Data' field from server response for action '{action}'. Mismatch in DTOs or corrupted data. Details: {dataJsonEx.Message}", dataJsonEx);
-                        }
+
+                        // Trả về trực tiếp data đã deserialize
+                        return serverResponse.Data;
                     }
-                    else // Server indicates an error (rawServerResponse.Success == false)
+                    else // Server indicates an error
                     {
-                        string errorMessage = rawServerResponse.Message ?? "An unknown server error occurred.";
-                        if (rawServerResponse.Data != null)
+                        string errorMessage = serverResponse.Message ?? "An unknown server error occurred.";
+                        if (serverResponse.Data != null)
                         {
-                            errorMessage += $"\nServer Details: {JsonConvert.SerializeObject(rawServerResponse.Data)}";
+                            errorMessage += $"\nServer Details: {JsonConvert.SerializeObject(serverResponse.Data)}";
                         }
                         Console.Error.WriteLine($"Server reported error for action '{action}': {errorMessage}");
                         throw new Exception($"Server error for action '{action}': {errorMessage}");
@@ -140,22 +140,13 @@ namespace ElectronicsStore.Client
                 }
                 catch (SocketException sockEx)
                 {
-                    string friendlyMessage;
-                    switch (sockEx.SocketErrorCode)
+                    string friendlyMessage = sockEx.SocketErrorCode switch
                     {
-                        case SocketError.ConnectionRefused:
-                            friendlyMessage = "Connection refused. The server might not be running or the IP/port is incorrect.";
-                            break;
-                        case SocketError.HostNotFound:
-                            friendlyMessage = "Server address not found. Check the server IP address.";
-                            break;
-                        case SocketError.TimedOut:
-                            friendlyMessage = "Connection attempt timed out. The server might be busy or unreachable.";
-                            break;
-                        default:
-                            friendlyMessage = $"A network error occurred (Code: {sockEx.SocketErrorCode}).";
-                            break;
-                    }
+                        SocketError.ConnectionRefused => "Connection refused. The server might not be running or the IP/port is incorrect.",
+                        SocketError.HostNotFound => "Server address not found. Check the server IP address.",
+                        SocketError.TimedOut => "Connection attempt timed out. The server might be busy or unreachable.",
+                        _ => $"A network error occurred (Code: {sockEx.SocketErrorCode}).",
+                    };
                     Console.Error.WriteLine($"Socket Error for action '{action}': {sockEx.Message} (Code: {sockEx.ErrorCode})");
                     throw new Exception($"Connection to server failed. {friendlyMessage} Details: {sockEx.Message}", sockEx);
                 }
@@ -188,6 +179,21 @@ namespace ElectronicsStore.Client
             return await SendRequest<object, List<ProductDTO>>("GetAllProducts", null);
         }
 
+        // Phương thức này đã được sửa lỗi và đồng bộ với SendRequest
+        public async Task<byte[]?> GetProductImageAsync(string fileName)
+        {
+            try
+            {
+                // Gọi phương thức SendRequest đã được định nghĩa
+                return await SendRequest<string, byte[]>("GetProductImage", fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting product image: {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task<ProductDTO> AddProductAsync(ProductDTO product)
         {
             return await SendRequest<ProductDTO, ProductDTO>("AddProduct", product);
@@ -203,29 +209,21 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, bool>("DeleteProduct", productId);
         }
 
-        public async Task<List<ProductDTO>> SearchProductsAsync(string keyword)
+        /*public async Task<List<ProductDTO>> SearchProductsAsync(string keyword)
         {
             return await SendRequest<string, List<ProductDTO>>("SearchProducts", keyword);
-        }
-        
-        // Removed the UpdateProductImageAsync method that used HttpMethod,
-        // as the current SendRequest signature does not support it directly.
-        // If image upload requires different handling (e.g., sending raw bytes),
-        // a dedicated method or an overload of SendRequest would be needed.
-        // For now, assuming imageFileName is part of a ProductDTO update or similar.
-        // If you need to send just the image file name for an update, the current update method should suffice if ProductDTO includes it.
+        }*/
 
         public async Task<bool> BulkAddProductsAsync(List<ProductDTO> products)
         {
             return await SendRequest<List<ProductDTO>, bool>("BulkAddProducts", products);
         }
+        // --- Specific API methods for Categories and Manufacturers ---
         public async Task<List<CategoryDTO>> GetCategoriesByNameAsync(string categoryName)
         {
-            // Loại bỏ ký tự không mong muốn có thể gây lỗi JSON nếu có.
-            // Hoặc kiểm tra và sanitize chuỗi đầu vào nếu cần.
             return await SendRequest<string, List<CategoryDTO>>("GetCategoriesByName", categoryName);
         }
-        // --- Specific API methods for Categories and Manufacturers ---
+
         public async Task<List<CategoryDTO>> GetAllCategoriesAsync()
         {
             return await SendRequest<object, List<CategoryDTO>>("GetAllCategories", null);
@@ -254,11 +252,6 @@ namespace ElectronicsStore.Client
             return await SendRequest<ImageUploadRequestDTO, bool>("UploadProductImage", payload);
         }
 
-        public async Task<byte[]> GetProductImageAsync(string fileName)
-        {
-            return await SendRequest<string, byte[]>("GetProductImage", fileName);
-        }
-
         // --- Specific API methods for Customers ---
         public async Task<List<CustomerDTO>> GetAllCustomersAsync()
         {
@@ -283,12 +276,7 @@ namespace ElectronicsStore.Client
 
         public async Task<int> CreateOrderAsync(OrderWithDetailsDTO orderWithDetails)
         {
-
-            //int newId = await SendRequest<OrderWithDetailsDTO, int>("CreateOrder", orderWithDetails);
-            //return new OrderDTO { ID = newId };
             return await SendRequest<OrderWithDetailsDTO, int>("CreateOrder", orderWithDetails);
-
-            //return await SendRequest<OrderWithDetailsDTO, OrderDTO>("CreateOrder", orderWithDetails);
         }
 
         public async Task<bool> UpdateOrderWithDetailsAsync(OrderWithDetailsDTO orderWithDetails)
@@ -297,7 +285,7 @@ namespace ElectronicsStore.Client
         }
 
         public async Task<bool> DeleteOrderAsync(int orderId)
-        {   
+        {
             return await SendRequest<int, bool>("DeleteOrder", orderId);
         }
 
@@ -311,9 +299,9 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, ProductDTO>("GetProductById", productId);
         }
 
-        public async Task<LoginResponseDTO> AuthenticateEmployee(LoginRequestDTO loginRequest)
+        public async Task<LoginResponseDTO> Authenticate(LoginRequestDTO loginRequest)
         {
-            return await SendRequest<LoginRequestDTO, LoginResponseDTO>("AuthenticateEmployee", loginRequest);
+            return await SendRequest<LoginRequestDTO, LoginResponseDTO>("Authenticate", loginRequest);
         }
     }
 }

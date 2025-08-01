@@ -93,6 +93,7 @@ namespace ElectronicsStore.Presentation
         {
             if (OrderID == 0 && orderDetails.Count == 0) // Add mode and no details added yet
             {
+                cboEmployee.Enabled = false;
                 cboCustomer.SelectedIndex = -1;
                 cboEmployee.SelectedIndex = -1;
                 cboProduct.SelectedIndex = -1;
@@ -331,6 +332,8 @@ namespace ElectronicsStore.Presentation
             {
                 if (OrderID != 0) // Cập nhật đơn hàng
                 {
+                    cboEmployee.Enabled = false;
+
                     operationSuccess = await _clientService.UpdateOrderWithDetailsAsync(orderWithDetailsDto);
                     if (operationSuccess)
                     {
@@ -342,6 +345,8 @@ namespace ElectronicsStore.Presentation
                 }
                 else // Tạo đơn hàng mới
                 {
+                    cboEmployee.Enabled = true;
+
                     int newOrderId = await _clientService.CreateOrderAsync(orderWithDetailsDto);
                     if (newOrderId > 0)
                     {
@@ -369,6 +374,7 @@ namespace ElectronicsStore.Presentation
                 // Đảm bảo UI trở lại trạng thái bình thường (nếu bạn đã enable/disable các control)
                 // Cursor.Current = Cursors.Default;
                 // btnSave.Enabled = true;
+                btnSave.Enabled = true;
             }
 
             // Hiển thị MessageBox sau khi đảm bảo thao tác mạng đã hoàn tất
