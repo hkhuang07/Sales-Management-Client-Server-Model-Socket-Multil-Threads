@@ -114,9 +114,40 @@ namespace ElectronicsStore.Presentation
                 }
             };
 
-            txtFind.TextChanged += (s, e) =>
+            txtFind.TextChanged += async (s, e) => // Thay đổi để gọi lại LoadCustomers hoặc SearchCustomers
             {
-                lblMessage.Text = ""; // Clear the message label when text changes
+                lblMessage.Text = string.Empty;
+                // Có thể debounce hoặc yêu cầu click nút để tránh gửi request liên tục
+                // Hiện tại giữ hành vi tìm kiếm tức thì như Category
+                string keyword = txtFind.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
+                {
+                    await LoadCategories();
+                }
+                else
+                {
+                    try
+                    {
+                        List<CategoryDTO> categories = await _clientService.SendRequest<string, List<CategoryDTO>>("GetCategoriesByName", keyword);
+                        if (categories != null && categories.Any())
+                        {
+                            lblMessage.Text = string.Empty;
+                            binding.DataSource = categories;
+                        }
+                        else
+                        {
+                            lblMessage.Text = "No matching categorie found.";
+                            binding.DataSource = new List<CategoryDTO>();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Xử lý lỗi trong quá trình tìm kiếm khi TextChanged
+                        Console.WriteLine($"Error during real-time search: {ex.Message}");
+                        lblMessage.Text = "Error during search.";
+                        binding.DataSource = new List<CategoryDTO>();
+                    }
+                }
             };
         }
 

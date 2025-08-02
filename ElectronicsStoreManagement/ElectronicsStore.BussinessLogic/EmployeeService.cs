@@ -96,11 +96,11 @@ namespace ElectronicsStore.BusinessLogic
             return _mapper.Map<EmployeeDTO>(entity);
         }
 
-        public EmployeeDTO GetByFullName(string fullname)
+        public List<EmployeeDTO> GetByFullName(string fullname)
         {
-            var entity = _repository.GetAll().FirstOrDefault(e => e.FullName == fullname);
-            if (entity == null) throw new Exception($"Employee not found with FullName = {fullname}.");
-            return _mapper.Map<EmployeeDTO>(entity);
+            var list = _repository.GetAll().Where(e => e.FullName.Contains(fullname)).ToList();
+            return _mapper.Map<List<EmployeeDTO>>(list);
+
         }
 
         public EmployeeDTO? GetByUserName(string userName)

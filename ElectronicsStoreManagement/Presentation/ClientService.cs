@@ -135,7 +135,7 @@ namespace ElectronicsStore.Client
                             errorMessage += $"\nServer Details: {JsonConvert.SerializeObject(serverResponse.Data)}";
                         }
                         Console.Error.WriteLine($"Server reported error for action '{action}': {errorMessage}");
-                        throw new Exception($"Server error for action '{action}': {errorMessage}");
+                            throw new Exception($"Server error for action '{action}': {errorMessage}");
                     }
                 }
                 catch (SocketException sockEx)
@@ -179,21 +179,6 @@ namespace ElectronicsStore.Client
             return await SendRequest<object, List<ProductDTO>>("GetAllProducts", null);
         }
 
-        // Phương thức này đã được sửa lỗi và đồng bộ với SendRequest
-        public async Task<byte[]?> GetProductImageAsync(string fileName)
-        {
-            try
-            {
-                // Gọi phương thức SendRequest đã được định nghĩa
-                return await SendRequest<string, byte[]>("GetProductImage", fileName);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting product image: {ex.Message}");
-                return null;
-            }
-        }
-
         public async Task<ProductDTO> AddProductAsync(ProductDTO product)
         {
             return await SendRequest<ProductDTO, ProductDTO>("AddProduct", product);
@@ -209,37 +194,29 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, bool>("DeleteProduct", productId);
         }
 
-        /*public async Task<List<ProductDTO>> SearchProductsAsync(string keyword)
+        public async Task<List<ProductDTO>> SearchProductsAsync(string keyword)
         {
+            // This sends the keyword as a string payload, which is correct.
             return await SendRequest<string, List<ProductDTO>>("SearchProducts", keyword);
-        }*/
-
+        }
         public async Task<bool> BulkAddProductsAsync(List<ProductDTO> products)
         {
             return await SendRequest<List<ProductDTO>, bool>("BulkAddProducts", products);
         }
-        // --- Specific API methods for Categories and Manufacturers ---
-        public async Task<List<CategoryDTO>> GetCategoriesByNameAsync(string categoryName)
+        // Phương thức này đã được sửa lỗi và đồng bộ với SendRequest
+        public async Task<byte[]?> GetProductImageAsync(string fileName)
         {
-            return await SendRequest<string, List<CategoryDTO>>("GetCategoriesByName", categoryName);
+            try
+            {
+                // Gọi phương thức SendRequest đã được định nghĩa
+                return await SendRequest<string, byte[]>("GetProductImage", fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting product image: {ex.Message}");
+                return null;
+            }
         }
-
-        public async Task<List<CategoryDTO>> GetAllCategoriesAsync()
-        {
-            return await SendRequest<object, List<CategoryDTO>>("GetAllCategories", null);
-        }
-
-        public async Task<List<ManufacturerDTO>> GetAllManufacturersAsync()
-        {
-            return await SendRequest<object, List<ManufacturerDTO>>("GetAllManufacturers", null);
-        }
-
-        // --- Specific API methods for Employees ---
-        public async Task<List<EmployeeDTO>> GetAllEmployeesAsync()
-        {
-            return await SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
-        }
-
         // --- New method to upload product image ---
         public async Task<bool> UploadProductImageAsync(int productId, string fileName, byte[] imageData)
         {
@@ -252,10 +229,62 @@ namespace ElectronicsStore.Client
             return await SendRequest<ImageUploadRequestDTO, bool>("UploadProductImage", payload);
         }
 
-        // --- Specific API methods for Customers ---
+
+        // --- Specific API metods for Categories ---
+        public async Task<List<CategoryDTO>> GetCategoriesByNameAsync(string categoryName)
+        {
+            return await SendRequest<string, List<CategoryDTO>>("GetCategoriesByName", categoryName);
+        }
+
+        public async Task<List<CategoryDTO>> GetAllCategoriesAsync()
+        {
+            return await SendRequest<object, List<CategoryDTO>>("GetAllCategories", null);
+        }
+
+
+        // --- Specific API metods for Manufacturers ---
+        public async Task<List<ManufacturerDTO>> GetAllManufacturersAsync()
+        {
+            return await SendRequest<object, List<ManufacturerDTO>>("GetAllManufacturers", null);
+        }
+
+        // --- Specific API methods for Employees ---
+        public async Task<List<EmployeeDTO>> GetAllEmployeesAsync()
+        {
+            return await SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
+        }
+        public async Task<LoginResponseDTO> Authenticate(LoginRequestDTO loginRequest)
+        {
+            return await SendRequest<LoginRequestDTO, LoginResponseDTO>("Authenticate", loginRequest);
+        }
+
+
+
+        // --- Specific API metods for Customers ---
         public async Task<List<CustomerDTO>> GetAllCustomersAsync()
         {
             return await SendRequest<object, List<CustomerDTO>>("GetAllCustomers", null);
+        }
+        public async Task<CustomerDTO> GetCustomerByIdAsync(int customerId)
+        {
+            return await SendRequest<int, CustomerDTO>("GetCustomerById", customerId);
+        }
+
+        public async Task<CustomerDTO> AddCustomerAsync(CustomerDTO customerDto)
+        {
+            return await SendRequest<CustomerDTO, CustomerDTO>("AddCustomer", customerDto);
+        }
+
+        public async Task<bool> UpdateCustomerAsync(CustomerDTO customerDto)
+        {
+            // Server trả về true/false
+            return await SendRequest<CustomerDTO, bool>("UpdateCustomer", customerDto);
+        }
+
+        public async Task<bool> ConfirmOrderAsync(ConfirmOrderDTO confirmOrderDto)
+        {
+            // Server trả về true/false
+            return await SendRequest<ConfirmOrderDTO, bool>("ConfirmOrder", confirmOrderDto);
         }
 
         // --- Specific API methods for Order Management ---
@@ -278,6 +307,11 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<OrderWithDetailsDTO, int>("CreateOrder", orderWithDetails);
         }
+        public async Task<int> CreateTmpOrderAsync(OrderWithDetailsDTO orderWithDetails)
+        {
+            return await SendRequest<OrderWithDetailsDTO, int>("CreateTmpOrder", orderWithDetails);
+        }
+
 
         public async Task<bool> UpdateOrderWithDetailsAsync(OrderWithDetailsDTO orderWithDetails)
         {
@@ -289,9 +323,9 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, bool>("DeleteOrder", orderId);
         }
 
-        public async Task<List<OrderDTO>> SearchOrdersAsync(string keyword)
+        public async Task<List<OrderDTO>> SearchOrdersAsync(string id)
         {
-            return await SendRequest<string, List<OrderDTO>>("SearchOrders", keyword);
+            return await SendRequest<string, List<OrderDTO>>("SearchOrder", id);
         }
 
         public async Task<ProductDTO> GetProductByIdAsync(int productId)
@@ -299,9 +333,6 @@ namespace ElectronicsStore.Client
             return await SendRequest<int, ProductDTO>("GetProductById", productId);
         }
 
-        public async Task<LoginResponseDTO> Authenticate(LoginRequestDTO loginRequest)
-        {
-            return await SendRequest<LoginRequestDTO, LoginResponseDTO>("Authenticate", loginRequest);
-        }
+ 
     }
 }

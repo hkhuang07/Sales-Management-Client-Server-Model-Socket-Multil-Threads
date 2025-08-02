@@ -337,9 +337,11 @@ namespace ElectronicsStore.Presentation
 
         private void lblLink_Click(object sender, EventArgs e)
         {
+            //info.Arguments = "[https://github.com/hkhuang07](https://github.com/hkhuang07)";
+
             ProcessStartInfo info = new ProcessStartInfo();
             info.FileName = "explorer.exe";
-            info.Arguments = "[https://github.com/hkhuang07](https://github.com/hkhuang07)";
+            info.Arguments = "https://github.com/hkhuang07";
             Process.Start(info);
         }
 

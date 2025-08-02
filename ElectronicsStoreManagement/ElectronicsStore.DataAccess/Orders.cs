@@ -15,6 +15,7 @@ namespace ElectronicsStore.DataAccess
         public int CustomerID { get; set; }
         public DateTime Date { get; set; }
         public string? Note { get; set; }
+        public string? Status { get; set; } 
         public virtual ObservableCollectionListSource<Order_Details> ViewDetails { get; } = new();
         public virtual Customers Customer { get; set; } = null!;
         public virtual Employees Employee { get; set; } = null!;

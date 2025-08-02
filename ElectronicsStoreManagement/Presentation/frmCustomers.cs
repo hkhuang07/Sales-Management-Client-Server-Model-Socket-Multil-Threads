@@ -70,7 +70,7 @@ namespace ElectronicsStore.Presentation
             try
             {
                 // ClientService.SendRequest đã tự xử lý ServerResponse và trả về Data trực tiếp
-                List<CustomerDTO> customers = await _clientService.SendRequest<object, List<CustomerDTO>>("GetAllCustomer", null);
+                List<CustomerDTO> customers = await _clientService.SendRequest<object, List<CustomerDTO>>("GetAllCustomers", null);
                 if (customers != null)
                 {
                     binding.DataSource = customers;
@@ -116,6 +116,7 @@ namespace ElectronicsStore.Presentation
                 if (binding.Count > 0)
                     binding.MoveLast();
             };
+
 
             btnFind.Click += async (s, e) =>
             {
@@ -410,7 +411,7 @@ namespace ElectronicsStore.Presentation
                 try
                 {
                     // Lấy toàn bộ danh mục để xuất
-                    List<CustomerDTO> customersToExport = await _clientService.SendRequest<object, List<CustomerDTO>>("GetAllCustomer", null);
+                    List<CustomerDTO> customersToExport = await _clientService.SendRequest<object, List<CustomerDTO>>("GetAllCustomers", null);
 
                     if (customersToExport == null || !customersToExport.Any())
                     {
@@ -447,11 +448,10 @@ namespace ElectronicsStore.Presentation
             }
         }
 
-        // Thêm hàm btnClear_Click nếu nó tồn tại trên form của bạn
         private async void btnClear_Click(object sender, EventArgs e)
         {
             txtFind.Clear();
-            await LoadCustomers(); // Tải lại toàn bộ danh sách
+            await LoadCustomers();
         }
     }
 }

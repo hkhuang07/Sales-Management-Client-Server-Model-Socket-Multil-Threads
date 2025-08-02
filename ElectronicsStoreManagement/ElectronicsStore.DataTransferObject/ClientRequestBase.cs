@@ -8,9 +8,20 @@ namespace ElectronicsStore.DataTransferObject
 {
     public class ClientRequestBase
     {
-        // Data sẽ là JToken hoặc JObject sau khi deserialize ban đầu.
-        // Sau đó, nó sẽ được deserialize lại thành kiểu cụ thể trong switch-case.
         public object Data { get; set; }
         public string MethodName { get; set; }  
+    }
+    public class ClientRequest<T>
+    {
+        public string MethodName { get; set; }
+        public T Data { get; set; }
+
+        public ClientRequest() { }
+
+        public ClientRequest(string methodName, T data)
+        {
+            MethodName = methodName;
+            Data = data;
+        }
     }
 }

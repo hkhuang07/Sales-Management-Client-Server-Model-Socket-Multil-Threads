@@ -62,19 +62,24 @@ namespace ElectronicsStore.BusinessLogic
             return _mapper.Map<List<ProductDTO>>(list);
         }
 
+        public List<ProductDTO> GetByName(string key)
+        {
+            var products = _repository.GetAllWithCategoryManufacturer();
+            var result = products.FindAll(p => p.ProductName.Contains(key, StringComparison.OrdinalIgnoreCase));
+            return _mapper.Map<List<ProductDTO>>(result);
+        }
         public ProductDTO? GetById(int id)
         {
             var product = _repository.GetById(id);
             return product != null ? _mapper.Map<ProductDTO>(product) : null;
         }
 
-        public ProductDTO? GetByName(string key)
+        public ProductDTO? Get1ByName(string key)
         {
-            var product = _repository.GetByName(key);
+            var product = _repository.Get1ByName(key);
             return product != null ? _mapper.Map<ProductDTO>(product) : null;
         }
 
-        //Thêm mới (Đã sửa: Trả về đối tượng đã thêm)
         public ProductDTO Add(ProductDTO dto)
         {
             Validate(dto);

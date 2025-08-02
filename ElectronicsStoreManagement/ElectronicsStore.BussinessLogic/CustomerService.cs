@@ -72,7 +72,8 @@ namespace ElectronicsStore.BusinessLogic
         public CustomerDTO GetById(int id)
         {
             var entity = _repository.GetById(id);
-            if (entity == null) throw new Exception($"Customer not found with ID = {id}.");
+            if (entity == null)
+                throw new Exception($"Customer not found with ID = {id}.");
             return _mapper.Map<CustomerDTO>(entity);
         }
 

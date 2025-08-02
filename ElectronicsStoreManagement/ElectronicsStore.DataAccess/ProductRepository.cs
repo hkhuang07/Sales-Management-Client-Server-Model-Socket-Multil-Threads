@@ -14,13 +14,41 @@ namespace ElectronicsStore.DataAccess
         {
             _context = context;
         }
+        public List<Products> GetAllWithCategoryManufacturer()
+        {
+            return _context.Product
+                           .Include(p => p.Category)
+                           .Include(p => p.Manufacturer)
+                           .ToList();
+        }
 
-        public List<Products> GetAll() => _context.Product.ToList();
-
+        public List<Products> GetAll()
+        {
+            return _context.Product
+                            .Include(p => p.Category)
+                            .Include(p => p.Manufacturer)
+                            .ToList();
+        }
         public Products? GetById(int id) => _context.Product.Find(id);
 
-        public Products? GetByName(string key) => _context.Product.FirstOrDefault(p => p.ProductName == key); // Đã sửa lỗi: Find() không hoạt động với chuỗi
+        public Products? Get1ByName(string key) => _context.Product.FirstOrDefault(p => p.ProductName == key); // Đã sửa lỗi: Find() không hoạt động với chuỗi
 
+        // ProductRepository.cs
+        public List<Products> GetByName(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                // Gọi phương thức GetAll() đã được cập nhật
+                return GetAll();
+            }
+
+            // Sử dụng .Include() để tải kèm theo dữ liệu của Category và Manufacturer
+            return _context.Product
+                .Include(p => p.Category)
+                .Include(p => p.Manufacturer)
+                .Where(p => EF.Functions.Like(p.ProductName, $"%{key}%") || EF.Functions.Like(p.Description, $"%{key}%"))
+                .ToList();
+        }
         public void Add(Products product)
         {
             if (_context.Product.Any(p => p.ID == product.ID))
@@ -74,12 +102,6 @@ namespace ElectronicsStore.DataAccess
             // _context.SaveChanges(); // Đã xóa, vì Service sẽ gọi SaveChanges
         }
 
-        public List<Products> GetAllWithCategoryManufacturer()
-        {
-            return _context.Product
-                           .Include(p => p.Category)
-                           .Include(p => p.Manufacturer)
-                           .ToList();
-        }
+        
     }
 }

@@ -9,24 +9,18 @@ namespace ElectronicsStore.DataTransferObject
 {
     public class ServerResponseBase
     {
-        // Data có thể là một đối tượng JSON (List<DTO>, DTO, int, string) hoặc null.
-        // Newtonsoft.Json sẽ tự động xử lý tuần tự hóa khi gửi.
         public object Data { get; set; }
         public bool Success { get; set; }
         public string Message { get; set; }
         
-        // Constructor mặc định (cần thiết cho Json.NET)
         public ServerResponseBase() { }
 
-        // Constructor để tạo phản hồi thành công
         public ServerResponseBase(object data, string message = null)
         {
             Success = true;
             Message = message;
             Data = data;
         }
-
-        // Constructor để tạo phản hồi lỗi
         public ServerResponseBase(string message, bool success = false)
         {
             Success = success; // Mặc định là false cho lỗi
@@ -34,23 +28,48 @@ namespace ElectronicsStore.DataTransferObject
             Data = null; // Gán null cho Data khi có lỗi
         }
 
-        // Phương thức tĩnh tiện ích để tạo phản hồi thành công
         public static ServerResponseBase Ok(object data, string message = null)
         {
             return new ServerResponseBase(data, message);
         }
 
-        // Phương thức tĩnh tiện ích để tạo phản hồi lỗi
         public static ServerResponseBase Error(string message)
         {
             return new ServerResponseBase(message);
         }
     }
 
-   /* public class ServerResponse<T> : ServerResponseBase
+    public class ServerResponse<T>
     {
-        // JsonConverter sẽ tự động xử lý Data thành kiểu T
-        [JsonProperty("Data")]
-        public new T Data { get; set; } // new để ẩn thuộc tính Data của lớp cơ sở
-    }*/
+        public bool Success { get; set; }
+        public string Message { get; set; }
+
+        public T Data { get; set; }
+
+        public ServerResponse() { }
+
+        public ServerResponse(T data, string message = null)
+        {
+            Success = true;
+            Message = message;
+            Data = data;
+        }
+
+        public ServerResponse(string message, bool success = false)
+        {
+            Success = success; // Mặc định là false cho lỗi
+            Message = message;
+            Data = default(T); // Gán default cho Data khi có lỗi
+        }
+
+        public static ServerResponse<T> Ok(T data, string message = null)
+        {
+            return new ServerResponse<T>(data, message);
+        }
+
+        public static ServerResponse<T> Error(string message)
+        {
+            return new ServerResponse<T>(message);
+        }
+    }
 }

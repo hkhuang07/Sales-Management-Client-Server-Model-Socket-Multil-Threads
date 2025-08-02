@@ -1,5 +1,4 @@
-﻿// ElectronicsStore.Presentation/frmOrderDetails.cs
-using ElectronicsStore.Client; // Use ClientService directly
+﻿using ElectronicsStore.Client; // Use ClientService directly
 using ElectronicsStore.DataTransferObject;
 using Newtonsoft.Json; // Still needed for general JSON operations if you perform them outside ClientService
 using System;
@@ -93,7 +92,6 @@ namespace ElectronicsStore.Presentation
         {
             if (OrderID == 0 && orderDetails.Count == 0) // Add mode and no details added yet
             {
-                cboEmployee.Enabled = false;
                 cboCustomer.SelectedIndex = -1;
                 cboEmployee.SelectedIndex = -1;
                 cboProduct.SelectedIndex = -1;

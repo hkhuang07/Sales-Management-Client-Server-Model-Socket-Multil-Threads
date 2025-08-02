@@ -116,9 +116,40 @@ namespace ElectronicsStore.Presentation
                 }
             };
 
-            txtFind.TextChanged += (s, e) =>
+            txtFind.TextChanged += async (s, e) =>
             {
-                lblMessage.Text = ""; // Clear the message label when text changes
+                lblMessage.Text = string.Empty;
+                // Có thể debounce hoặc yêu cầu click nút để tránh gửi request liên tục
+                // Hiện tại giữ hành vi tìm kiếm tức thì như Category
+                string keyword = txtFind.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
+                {
+                    await LoadManufacturers();
+                }
+                else
+                {
+                    try
+                    {
+                        List<ManufacturerDTO> manufacturers = await _clientService.SendRequest<string, List<ManufacturerDTO>>("GetManufacturersByName", keyword);
+                        if (manufacturers != null && manufacturers.Any())
+                        {
+                            lblMessage.Text = string.Empty;
+                            binding.DataSource = manufacturers;
+                        }
+                        else
+                        {
+                            lblMessage.Text = "No matching manufacturer found.";
+                            binding.DataSource = new List<ManufacturerDTO>();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Xử lý lỗi trong quá trình tìm kiếm khi TextChanged
+                        Console.WriteLine($"Error during real-time search: {ex.Message}");
+                        lblMessage.Text = "Error during search.";
+                        binding.DataSource = new List<ManufacturerDTO>();
+                    }
+                }
             };
             btnClear.Click += async (s, e) =>
             {

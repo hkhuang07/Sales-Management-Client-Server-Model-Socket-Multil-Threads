@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Azure;
+using Azure.Core;
 using ElectronicsStore.BusinessLogic;
 using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
@@ -321,42 +323,67 @@ namespace ElectronicsStore.Server
                                     }
                                     break;
 
-                                 /*Thêm case mới để xử lý yêu cầu lấy ảnh
-                                case "GetProductImage":
-                                    {
-                                    // Dữ liệu được gửi lên là tên file ảnh (string)
-                                    // Sử dụng JsonConvert.DeserializeObject để lấy tên file từ trường Data
-                                    string? fileName = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
+                                /*Thêm case mới để xử lý yêu cầu lấy ảnh
+                               case "GetProductImage":
+                                   {
+                                   // Dữ liệu được gửi lên là tên file ảnh (string)
+                                   // Sử dụng JsonConvert.DeserializeObject để lấy tên file từ trường Data
+                                   string? fileName = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
 
-                                    if (string.IsNullOrEmpty(fileName))
-                                    {
-                                        responseBase = new ServerResponseBase { Success = false, Message = "File name is required." };
-                                    }
-                                    else
-                                    {
-                                        // Gọi ProductService để lấy mảng byte của ảnh
-                                        byte[]? imageData = productService.GetProductImage(fileName);
+                                   if (string.IsNullOrEmpty(fileName))
+                                   {
+                                       responseBase = new ServerResponseBase { Success = false, Message = "File name is required." };
+                                   }
+                                   else
+                                   {
+                                       // Gọi ProductService để lấy mảng byte của ảnh
+                                       byte[]? imageData = productService.GetProductImage(fileName);
 
-                                        if (imageData != null)
+                                       if (imageData != null)
+                                       {
+                                           // Trả về mảng byte của ảnh
+                                           responseBase = new ServerResponseBase { Data = imageData, Success = true };
+                                       }
+                                       else
+                                       {
+                                           // Trả về lỗi nếu không tìm thấy file
+                                           responseBase = new ServerResponseBase { Success = false, Message = "Image not found." };
+                                       }
+                                   }
+                                   }
+                                   break;*/
+
+                                case "SearchProducts":
+                                    try
+                                    {
+                                        string productKeyword;
+        
+                                        // Handle cases where Data is a string or a JToken.
+                                        // This is a more robust way to extract the keyword.
+                                        if (requestBase.Data is string dataString)
                                         {
-                                            // Trả về mảng byte của ảnh
-                                            responseBase = new ServerResponseBase { Data = imageData, Success = true };
+                                            productKeyword = dataString;
                                         }
                                         else
                                         {
-                                            // Trả về lỗi nếu không tìm thấy file
-                                            responseBase = new ServerResponseBase { Success = false, Message = "Image not found." };
+                                            // If it's not a string, assume it's a JToken and try to convert it.
+                                            // This handles cases where the payload is sent as a JSON object, even if it just contains one value.
+                                            productKeyword = (requestBase.Data as Newtonsoft.Json.Linq.JToken)?.ToObject<string>();
                                         }
-                                    }
-                                    }
-                                    break;*/
 
-                                case "SearchProducts":
-                                    string productKeyword = requestBase.Data.ToString();
-                                    var filteredProducts = productService.GetByName(productKeyword);
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Products retrieved successfully by name.";
-                                    responseBase.Data = filteredProducts;
+                                        // Add a null check before calling GetByName to prevent the "Value cannot be null" error.
+                                        var filteredProducts = productService.GetByName(productKeyword ?? string.Empty);
+
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Products retrieved successfully by name.";
+                                        responseBase.Data = filteredProducts;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Error processing SearchProducts: {ex.Message}";
+                                        responseBase.Data = null;
+                                    }
                                     break;
 
                                 case "AddProduct":
@@ -666,6 +693,11 @@ namespace ElectronicsStore.Server
                                     responseBase.Success = true;
                                     responseBase.Message = "Customer deleted successfully.";
                                     break;
+
+                                // ======================================
+                                // CÁC CASE CHO ORDER
+                                // ======================================
+
                                 case "GetAllOrders":
                                     var orders = orderService.GetAllList();
                                     responseBase.Success = true;
@@ -695,7 +727,34 @@ namespace ElectronicsStore.Server
                                         responseBase.Message = $"Error retrieving order: {ex.Message}";
                                     }
                                     break;
-                                // ... (Giữ nguyên tất cả các case khác)
+                                case "SearchOrder":
+                                    try
+                                    {
+                                        int orderId = requestBase.Data is long idLong ? (int)idLong : JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
+                                        var order = orderService.GetById(orderId);
+                                        List<OrderDTO> orderList = new List<OrderDTO>();
+
+                                        if (order != null)
+                                        {
+                                            orderList.Add(order);
+                                            responseBase.Success = true;
+                                            responseBase.Message = "Order retrieved successfully.";
+                                            //responseBase.Data = order;
+                                        }
+                                        else
+                                        {
+                                            responseBase.Success = false;
+                                            responseBase.Message = $"Order with ID {orderId} not found.";
+                                        }
+                                        responseBase.Data = orderList; // Luôn trả về một danh sách
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Error retrieving order: {ex.Message}";
+                                        responseBase.Data = null;
+                                    }
+                                    break;
                                 case "GetOrdersByCustomerId":
                                     try
                                     {
@@ -711,7 +770,6 @@ namespace ElectronicsStore.Server
                                         responseBase.Message = $"Error retrieving orders by customer ID: {ex.Message}";
                                     }
                                     break;
-                                // ...
                                 case "GetOrdersByEmployeeId":
                                     try
                                     {
@@ -727,7 +785,7 @@ namespace ElectronicsStore.Server
                                         responseBase.Message = $"Error retrieving orders by employee ID: {ex.Message}";
                                     }
                                     break;
-                                // ...
+                                
                                 case "CreateOrder":
                                     try
                                     {
@@ -742,6 +800,31 @@ namespace ElectronicsStore.Server
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error creating order: {ex.Message}";
+                                        responseBase.Data = -1;
+                                    }
+                                    break;
+                                case "CreateTmpOrder":
+                                    try
+                                    {
+                                        var orderWithDetailsCreate = JsonConvert.DeserializeObject<OrderWithDetailsDTO>(requestBase.Data.ToString());
+                                        int newOrderId = orderService.CreateTmpOrder(orderWithDetailsCreate.Order, orderWithDetailsCreate.OrderDetails);
+
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Order and details created successfully.";
+                                        responseBase.Data = newOrderId;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        // Log lỗi chi tiết ở server để debug dễ hơn
+                                        Console.WriteLine($"Error creating order: {ex.Message}");
+                                        if (ex.InnerException != null)
+                                        {
+                                            Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                                        }
+
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Server error for action 'CreateOrder': {ex.Message}";
+                                        responseBase.Data = -1; // Trả về -1 để báo hiệu lỗi
                                     }
                                     break;
 
@@ -753,12 +836,13 @@ namespace ElectronicsStore.Server
 
                                         responseBase.Success = true;
                                         responseBase.Message = "Order and details updated successfully.";
-                                        responseBase.Data = null;
+                                        responseBase.Data = true;
                                     }
                                     catch (Exception ex)
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error updating order: {ex.Message}";
+                                        responseBase.Data = false;
                                     }
                                     break;
 
@@ -769,16 +853,27 @@ namespace ElectronicsStore.Server
                                         orderService.DeleteOrderAndDetails(orderIdToDelete);
                                         responseBase.Success = true;
                                         responseBase.Message = "Order and its details deleted successfully.";
-                                        responseBase.Data = null;
+                                        responseBase.Data = true;
                                     }
                                     catch (Exception ex)
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error deleting order: {ex.Message}";
+                                        responseBase.Data = false;
                                     }
                                     break;
+                                case "ConfirmOrder":
+                                    var confirmOrderDto = JsonConvert.DeserializeObject<ConfirmOrderDTO>(requestBase.Data.ToString());
+                                    orderService.ConfirmOrder(confirmOrderDto);
+                                    responseBase.Success = true;
+                                    responseBase.Data = true; 
+                                    break;
 
-                                // ... Các case cho OrderDetails
+
+                                // ======================================
+                                // CÁC CASE CHO ORDER DETAILS
+                                // ======================================
+
                                 case "GetOrderDetailsByOrderId":
                                     try
                                     {
@@ -886,6 +981,7 @@ namespace ElectronicsStore.Server
                     }
                     catch (JsonException jEx)
                     {
+                        //responseBase.Success = false;
                         responseBase.Message = $"Invalid JSON format received: {jEx.Message}. Request: '{requestJson}'";
                         Console.Error.WriteLine($"JSON Deserialization Error: {jEx.Message} | Raw request: '{requestJson}'");
                     }

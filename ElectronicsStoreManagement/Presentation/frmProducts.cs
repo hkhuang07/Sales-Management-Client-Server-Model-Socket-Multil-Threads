@@ -1,9 +1,8 @@
-﻿// ElectronicsStore.Presentation/frmProducts.cs
-using ClosedXML.Excel;
-using ElectronicsStore.Client; // Assuming this contains your ClientService and related DTOs
+﻿using ClosedXML.Excel;
+using ElectronicsStore.Client; 
 using ElectronicsStore.DataTransferObject;
 using Newtonsoft.Json;
-using SlugGenerator; // Đảm bảo đã thêm thư viện này hoặc tự implement GenerateSlug
+using SlugGenerator; 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -114,11 +113,7 @@ namespace ElectronicsStore.Presentation
             btnAdd.Enabled = !value;
             btnUpdate.Enabled = !value;
             btnDelete.Enabled = !value;
-            btnFind.Enabled = !value;
-            btnImport.Enabled = !value;
-            btnExport.Enabled = !value;
-            btnClear.Enabled = !value;
-            txtFind.Enabled = !value;
+         
         }
 
         public async Task GetCategories()
@@ -187,42 +182,58 @@ namespace ElectronicsStore.Presentation
                 string keyword = txtFind.Text.Trim();
                 if (string.IsNullOrEmpty(keyword))
                 {
-                    await LoadProductData(); // Load all manufacturers from server
+                    await LoadProductData();
                 }
-                else
+                try
                 {
-                    try
-                    {
-                        List<ProductDTO> filteredProducts;
-                        List<ProductDTO> products = await _clientService.SendRequest<string, List<ProductDTO>>("SearchProducts", keyword); // Changed method name
+                    List<ProductDTO> filteredProducts;
+                    filteredProducts = await _clientService.SearchProductsAsync(keyword);
 
-                        if (products != null && products.Any())
-                        {
-                            lblMessage.Text = ""; // Clear message if results found
-                            binding.DataSource = products;
-                        }
-                        else
-                        {
-                            lblMessage.Text = "No matching product found."; // Updated message
-                            binding.DataSource = new List<ProductDTO>(); // Clear DataGridView
-                        }
-                    }
-                    catch (Exception ex)
+                    binding.DataSource = filteredProducts;
+                    if (filteredProducts == null || filteredProducts.Count == 0)
                     {
-                        MessageBox.Show($"Error searching products: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        lblMessage.Text = "Error during search.";
+                        lblMessage.Text = "No matching product found.";
                     }
-
+                    else
+                    {
+                        lblMessage.Text = "";
+                    }
                 }
-                   
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error connecting to server or searching products: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             };
 
-            txtFind.TextChanged += (s, e) =>
+            txtFind.TextChanged += async (s, e) => // Thay đổi để gọi lại LoadCustomers hoặc SearchCustomers
             {
-                lblMessage.Text = ""; // Clear the message label when text changes
+                lblMessage.Text = string.Empty;
+                string keyword = txtFind.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
+                {
+                    await LoadProductData();
+                }
+                try
+                {
+                    List<ProductDTO> filteredProducts;
+                    filteredProducts = await _clientService.SearchProductsAsync(keyword);
+
+                    binding.DataSource = filteredProducts;
+                    if (filteredProducts == null || filteredProducts.Count == 0)
+                    {
+                        lblMessage.Text = "No matching product found.";
+                    }
+                    else
+                    {
+                        lblMessage.Text = "";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error connecting to server or searching products: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             };
         }
-
 
         private async Task DownloadImageAndSaveToCache(string fileName)
         {
@@ -251,10 +262,7 @@ namespace ElectronicsStore.Presentation
                 // Log lỗi hoặc thông báo nhưng không làm gián đoạn luồng chính
                 Console.WriteLine($"Error downloading image '{fileName}': {ex.Message}");
             }
-
-
         }
-
 
         /// <summary>
         /// Loads product data, categories, and manufacturers into the form controls.
@@ -267,13 +275,14 @@ namespace ElectronicsStore.Presentation
             _selectedImageBytes = null; // Clear selected image data on data load
             _selectedImageFileName = null;
 
-            await GetCategories();
-            await GetManufacturers();
-
             try
             {
+                await GetCategories();
+                await GetManufacturers();
                 List<ProductDTO> list = await _clientService.GetAllProductsAsync();
                 binding.DataSource = list;
+                dataGridView.DataSource = binding; // Assign DataSource to DataGridView from BindingSource
+
                 SetupToolStrip();
 
                 // Clear existing bindings to prevent issues when reloading
@@ -293,7 +302,6 @@ namespace ElectronicsStore.Presentation
                 cboCategory.DataBindings.Add("SelectedValue", binding, "CategoryID", false, DataSourceUpdateMode.Never);
                 cboManufacturer.DataBindings.Add("SelectedValue", binding, "ManufacturerID", false, DataSourceUpdateMode.Never);
 
-                dataGridView.DataSource = binding; // Assign DataSource to DataGridView from BindingSource
 
                 var imageDownloadTasks = new List<Task>();
                 string defaultImagePath = Path.Combine(imagesFolder, "product_default.jpg");
@@ -326,6 +334,10 @@ namespace ElectronicsStore.Presentation
             catch (Exception ex)
             {
                 MessageBox.Show($"Error connecting to server: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                EnableControls(true);
             }
         }
 
@@ -422,7 +434,7 @@ namespace ElectronicsStore.Presentation
                 }
             }
         }
-
+            
       
 
         private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)

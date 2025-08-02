@@ -1,16 +1,17 @@
-﻿using System;
+﻿using ElectronicsStore.Client;
+using ElectronicsStore.DataTransferObject;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ElectronicsStore.DataTransferObject;
-using ElectronicsStore.Client;
-using System.IO;
 
 namespace ElectronicsStore.Presentation
 {
@@ -28,6 +29,14 @@ namespace ElectronicsStore.Presentation
         public frmSale(ClientService clientService)
         {
             _clientService = clientService;
+            InitializeComponent();
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "sale.html";
+        }
+
+        public frmSale()
+        {
+            _clientService = new ClientService("127.0.0.1", 301);
             InitializeComponent();
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
             helpProvider1.HelpNamespace = helpURL + "sale.html";
@@ -61,7 +70,7 @@ namespace ElectronicsStore.Presentation
                             card.ProductImage = Image.FromFile(imagePath);
                         }
                         else
-                        {               
+                        {
                             string defaultImagePath = Path.Combine(imagesFolder, "product_default.jpg");
                             if (File.Exists(defaultImagePath))
                             {
@@ -135,7 +144,7 @@ namespace ElectronicsStore.Presentation
                 }
                 else
                 {
-                    filteredProducts = await _clientService.SendRequest<string, List<ProductDTO>>("SearchProducts", keyword); // Changed method name
+                    filteredProducts = await _clientService.SearchProductsAsync(keyword); // Changed method name
 
                 }
 
@@ -189,7 +198,7 @@ namespace ElectronicsStore.Presentation
             btnFind_Click(sender, e);
         }
 
-        
+
 
         // Order Details Management
 
@@ -218,7 +227,7 @@ namespace ElectronicsStore.Presentation
             txtTotalDetails.Text = total.ToString("N0");
         }
 
-        
+
 
         // Product Card Interactions
 
@@ -356,87 +365,92 @@ namespace ElectronicsStore.Presentation
 
         private async void btnOrder_Click(object sender, EventArgs e)
         {
-            if (dgvOrderDetails.Rows.Count <= 0)
+            if (orderDetails == null || !orderDetails.Any())
             {
                 MessageBox.Show("Please add products to the order first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            using (frmConfirm confirm = new frmConfirm(_clientService, currentOrderID))
+            try
             {
-                await confirm.LoadDataAsync();
-
-                if (confirm.ShowDialog() == DialogResult.OK)
+                // Bước 1: Tạo hoặc cập nhật đơn hàng tạm thời (chỉ với sản phẩm)
+                int orderIdToConfirm = 0;
+                var orderWithDetails = new OrderWithDetailsDTO
                 {
-                    if (orderDetails == null || !orderDetails.Any())
+                    Order = new OrderDTO { ID = currentOrderID, Status = "Pending" },
+                    OrderDetails = orderDetails.ToList()
+                };
+
+                if (currentOrderID == 0)
+                {
+                    orderIdToConfirm = await _clientService.CreateTmpOrderAsync(orderWithDetails);
+
+                    /*var result = await _clientService.CreateOrderAsync(orderWithDetails);
+
+                    if (result is int)
                     {
-                        MessageBox.Show("No products selected for the order!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
+                        orderIdToConfirm = (int)result;
+                    }*/
+                }
+                else
+                {
+                    bool updated = await _clientService.UpdateOrderWithDetailsAsync(orderWithDetails);
+                    if (updated)
+                    {
+                        orderIdToConfirm = currentOrderID;
                     }
+                }
 
-                    var orderWithDetails = new OrderWithDetailsDTO
+                if (orderIdToConfirm <= 0)
+                {
+                    MessageBox.Show("Failed to create or update order. Aborting.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Bước 2: Mở frmConfirm để lấy thông tin khách hàng, nhân viên và xác nhận
+                using (frmConfirm confirm = new frmConfirm(_clientService, orderIdToConfirm))
+                {
+                    if (confirm.ShowDialog() == DialogResult.OK)
                     {
-                        Order = new OrderDTO
+                        // Bước 3: Xác nhận đơn hàng với đầy đủ thông tin
+                        var confirmOrderDto = new ConfirmOrderDTO
                         {
-                            ID = currentOrderID,
-                            EmployeeID = confirm.cboEmployee.SelectedValue != null ? Convert.ToInt32(confirm.cboEmployee.SelectedValue) : 0,
+                            OrderID = orderIdToConfirm,
                             CustomerID = confirm.CustomerID,
-                            Date = DateTime.Now,
-                            Note = confirm.txtNote.Text
-                        },
-                        OrderDetails = orderDetails.ToList()
-                    };
+                            EmployeeID = confirm.EmployeeID,
+                            Note = confirm.Note,
+                            PrintInvoice = confirm.PrintInvoice
+                        };
 
-                    try
-                    {
-                        if (currentOrderID != 0)
+                        bool confirmationResult = await _clientService.ConfirmOrderAsync(confirmOrderDto);
+
+                        if (confirmationResult)
                         {
-                            bool updated = await _clientService.UpdateOrderWithDetailsAsync(orderWithDetails);
-                            if (updated)
+                            MessageBox.Show("Order confirmed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            if (confirm.PrintInvoice)
                             {
-                                MessageBox.Show("Order updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                // In hóa đơn
+                                frmPrintOrder report = new frmPrintOrder(orderIdToConfirm, _clientService);
+                                report.ShowDialog();
                             }
-                            else
-                            {
-                                MessageBox.Show("Failed to update order.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
+
+                            // Reset trạng thái của frmSale
+                            orderDetails.Clear();
+                            RefreshOrderDetails();
+                            currentOrderID = 0;
+                            await LoadOrdersAsync(); // Tải lại danh sách đơn hàng đã xác nhận
                         }
                         else
                         {
-                            /*OrderDTO newOrder = await _clientService.CreateOrderAsync(orderWithDetails);
-                            if (newOrder != null && newOrder.ID > 0)
-                            {
-                                currentOrderID = newOrder.ID;
-                                MessageBox.Show($"New order created successfully with ID: {currentOrderID}!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            }
-                            else
-                            {
-                                MessageBox.Show("Failed to create new order.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }*/
+                            MessageBox.Show("Order confirmation failed. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
-
-                        if (confirm.chkPrintInvoice.Checked)
-                        {
-                            frmPrintOrder report = new frmPrintOrder(currentOrderID,_clientService);
-                            report.ShowDialog();
-                        }
-
-                        orderDetails.Clear();
-                        RefreshOrderDetails();
-                        currentOrderID = 0;
-                        await LoadOrdersAsync(); // Call the new async method to reload orders
-                    }
-                    catch (Exception ex)
-                    {
-                        string fullMessage = ex.Message;
-                        if (ex.InnerException != null)
-                            fullMessage += "\n\n" + ex.InnerException.Message;
-                        if (ex.InnerException?.InnerException != null)
-                            fullMessage += "\n\n" + ex.InnerException.InnerException.Message;
-
-                        MessageBox.Show($"An error occurred while saving order:\n{fullMessage}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during the order process: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -506,14 +520,29 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show("Please select an order to print the invoice.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            
+
             int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["dataGridViewTextBoxColumn1"].Value);
-           //int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
+            //int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
 
             using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
             {
                 printOrder.ShowDialog();
             }
         }
+
+        private void dgvOrder_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+              
+            if (e.RowIndex >= 0 && e.ColumnIndex == dgvOrder.Columns["ViewDetails"].Index)
+            {
+                int orderId = Convert.ToInt32(dgvOrder.Rows[e.RowIndex].Cells["OrderID"].Value);
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId))
+                {
+                    orderDetails.ShowDialog();
+                }
+            }
+        }
+
+
     }
 }

@@ -208,7 +208,7 @@
             // 
             toolStripStatusLabel2.BackColor = Color.CornflowerBlue;
             toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            toolStripStatusLabel2.Size = new Size(634, 20);
+            toolStripStatusLabel2.Size = new Size(603, 20);
             toolStripStatusLabel2.Spring = true;
             // 
             // lblLink

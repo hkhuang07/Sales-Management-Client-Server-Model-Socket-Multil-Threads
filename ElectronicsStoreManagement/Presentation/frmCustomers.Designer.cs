@@ -349,7 +349,7 @@
             btnClear.Text = "Clear";
             btnClear.TextAlign = ContentAlignment.MiddleLeft;
             btnClear.TextImageRelation = TextImageRelation.TextBeforeImage;
-            //btnClear.Click += btnClear_Click;
+            btnClear.Click += btnClear_Click;
             // 
             // txtCustomerName
             // 

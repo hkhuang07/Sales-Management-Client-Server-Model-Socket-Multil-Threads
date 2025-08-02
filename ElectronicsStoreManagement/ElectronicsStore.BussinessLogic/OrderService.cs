@@ -75,6 +75,72 @@ namespace ElectronicsStore.BusinessLogic
                     throw;
                 }
             }
+
+        }
+        public int CreateTmpOrder(OrderDTO orderDto, List<OrderDetailsDTO> details)
+        {
+            using (var transaction = _unitOfWork.BeginTransaction())
+            {
+                try
+                {
+                    var order = _mapper.Map<Orders>(orderDto);
+                    order.Date = DateTime.Now;
+                    order.Status = "Pending"; // Đảm bảo trạng thái ban đầu là Pending
+                    order.CustomerID = 0; // Gán CustomerID = null để tránh lỗi khóa ngoại
+                    order.EmployeeID = 0; // Gán EmployeeID = null để tránh lỗi khóa ngoại
+
+                    _repository.Insert(order);
+                    _unitOfWork.SaveChanges(); // Lần lưu đầu tiên để lấy Order.ID
+
+                    foreach (var detailDto in details)
+                    {
+                        var detail = _mapper.Map<Order_Details>(detailDto);
+                        detail.OrderID = order.ID;
+                        _orderdetailsrepository.Insert(detail);
+                    }
+
+                    _unitOfWork.SaveChanges(); // Lưu OrderDetails
+                    transaction.Commit();
+                    return order.ID;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    // Ghi lại lỗi chi tiết hơn ở đây để dễ debug
+                    Console.WriteLine($"Error in OrderService.CreateOrder: {ex}");
+                    throw; // Ném lại lỗi để ServerHandler bắt được
+                }
+            }
+        }
+        public void ConfirmOrder(ConfirmOrderDTO dto)
+        {
+            using (var transaction = _unitOfWork.BeginTransaction())
+            {
+                try
+                {
+                    var order = _repository.GetById(dto.OrderID);
+                    if (order == null)
+                    {
+                        throw new InvalidOperationException($"Order with ID {dto.OrderID} not found.");
+                    }
+
+                    // Cập nhật các thông tin từ DTO
+                    order.CustomerID = dto.CustomerID;
+                    order.EmployeeID = dto.EmployeeID;
+                    order.Note = dto.Note;
+                    order.Status = "Confirmed"; // Cập nhật trạng thái
+
+                    _repository.Update(order);
+                    _unitOfWork.SaveChanges();
+
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
         }
 
         // --- CẬP NHẬT ---
@@ -174,5 +240,9 @@ namespace ElectronicsStore.BusinessLogic
             var orders = _repository.GetByEmployeeId(employeeId);
             return _mapper.Map<List<OrderDTO>>(orders);
         }
+
+
     }
+
+
 }

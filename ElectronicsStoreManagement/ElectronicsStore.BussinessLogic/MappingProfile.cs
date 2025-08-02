@@ -26,11 +26,15 @@ namespace ElectronicsStore.BusinessLogic
             CreateMap<Products, ProductList>()
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName))
                 .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Manufacturer.ManufacturerName));
+            CreateMap<Products, ProductDTO>()
+               .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName))
+               .ForMember(dest => dest.ManufacturerName, opt => opt.MapFrom(src => src.Manufacturer.ManufacturerName))
+               .ReverseMap(); // Vẫn giữ ReverseMap nếu cần ánh xạ ngược
 
-           /* CreateMap<Products, ImageUploadRequestDTO>()
-                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Image))
-                .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Image))
-                .ForMember(dest => dest.ImageData, opt => opt.MapFrom(src => src.Image));*/
+            /* CreateMap<Products, ImageUploadRequestDTO>()
+                 .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Image))
+                 .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Image))
+                 .ForMember(dest => dest.ImageData, opt => opt.MapFrom(src => src.Image));*/
 
             // Orders → OrderList (hiển thị dữ liệu ra giao diện)
             CreateMap<Orders, OrderList>()
@@ -39,11 +43,22 @@ namespace ElectronicsStore.BusinessLogic
                 .ForMember(dest => dest.CustomeAddress, opt => opt.MapFrom(src => src.Customer.CustomerAddress))
                 .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer.CustomerPhone))
                 .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.ViewDetails.Sum(d => d.Quantity * d.Price)));
+            CreateMap<Orders, OrderDTO>()
+               .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee.FullName))
+               .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.CustomerName))
+               .ForMember(dest => dest.CustomerAddress, opt => opt.MapFrom(src => src.Customer.CustomerAddress))
+               .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer.CustomerPhone))
+               .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.ViewDetails.Sum(d => d.Quantity * d.Price)));
 
             // OrderDTO ↔ Orders (dùng cho lưu/chỉnh sửa)
             CreateMap<Order_Details, OrderDetailsList>()
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.ProductName))
             .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Quantity * src.Price));
+            CreateMap<Order_Details, OrderDetailsDTO>()
+             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.ProductName))
+             .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Quantity * src.Price));
+
+                
             CreateMap<OrderDetailsList, Order_Details>();
 
            CreateMap<Employees, LoginResponseDTO>()

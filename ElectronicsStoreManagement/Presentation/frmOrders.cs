@@ -80,10 +80,13 @@ namespace ElectronicsStore.Presentation
             // Nút tìm kiếm
             btnFind.Click += async (s, e) => // Made async to await client service calls
             {
+                lblMessage.Text = "";
+
                 string keyword = txtFind.Text.Trim();
                 try
                 {
                     List<OrderDTO> filteredOrders;
+
                     if (string.IsNullOrEmpty(keyword))
                     {
                         // If search box is empty, load all data
@@ -100,7 +103,8 @@ namespace ElectronicsStore.Presentation
                     // dataGridView.DataSource = binding; 
                     if (filteredOrders == null || filteredOrders.Count == 0)
                     {
-                        lblMessage.Text = "No matching order found.";
+                        lblMessage.Text = $"Orders: {keyword} not found!";
+
                     }
                     else
                     {
@@ -109,16 +113,53 @@ namespace ElectronicsStore.Presentation
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error connecting to server or searching orders: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    //lblMessage.Text = $"Orders: {ex.Message}";
+                    lblMessage.Text = $"Orders: {keyword} not found!";
+
                 }
+
+
             };
 
-            txtFind.TextChanged += (s, e) =>
+            txtFind.TextChanged += async (s, e) =>
             {
-                lblMessage.Text = ""; // Clear the message label when text changes
-                // No longer automatically trigger btnFind.PerformClick() on TextChanged
-                // because it causes a new async call on every keystroke, which can be inefficient.
-                // The user can manually click the Find button or press Enter (if implemented).
+                lblMessage.Text = "";
+                
+                string keyword = txtFind.Text.Trim();
+                try
+                {
+                    List<OrderDTO> filteredOrders;
+
+                    if (string.IsNullOrEmpty(keyword))
+                    {
+                        // If search box is empty, load all data
+                        filteredOrders = await _clientService.GetAllOrdersAsync();
+                    }
+                    else
+                    {
+                        // Call server to search orders by keyword
+                        filteredOrders = await _clientService.SearchOrdersAsync(keyword);
+                    }
+
+                    binding.DataSource = filteredOrders;
+                    // DataGridView is already bound to binding, no need to re-assign
+                    // dataGridView.DataSource = binding; 
+                    if (filteredOrders == null || filteredOrders.Count == 0)
+                    {
+                        lblMessage.Text = $"Orders: {keyword} not found!";
+
+                    }
+                    else
+                    {
+                        lblMessage.Text = "";
+                    }
+                }
+                catch (Exception ex)
+                {
+                   // lblMessage.Text = $"Orders: {ex.Message}";
+                    lblMessage.Text = $"Orders: {keyword} not found!";
+                }
+
             };
         }
 

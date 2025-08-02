@@ -87,43 +87,76 @@ namespace ElectronicsStore.Presentation
 
             btnFind.Click += async (s, e) =>
             {
-                string keyword = txtFind.Text.Trim().ToLower();
-                try
+                string keyword = txtFind.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
                 {
-                    List<EmployeeDTO> employees;
-                    if (string.IsNullOrEmpty(keyword))
+                    await LoadEmployees();
+                }
+                else
+                {
+                    try
                     {
-                        employees = await _clientService.SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
+                        List<EmployeeDTO> employees = await _clientService.SendRequest<string, List<EmployeeDTO>>("SearchEmployees", keyword);
+                        if (employees != null && employees.Any())
+                        {
+                            lblMessage.Text = string.Empty;
+                            binding.DataSource = employees;
+                        }
+                        else
+                        {
+                            lblMessage.Text = "No matching employee found.";
+                            binding.DataSource = new List<EmployeeDTO>();
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        employees = await _clientService.SendRequest<string, List<EmployeeDTO>>("SearchEmployees", keyword);
-                    }
-
-                    if (employees != null && employees.Any())
-                    {
-                        binding.DataSource = employees;
-                        lblMessage.Text = "";
-                    }
-                    else
-                    {
+                        // Xử lý lỗi trong quá trình tìm kiếm khi TextChanged
+                        Console.WriteLine($"Error during real-time search: {ex.Message}");
+                        lblMessage.Text = "Error during search.";
                         binding.DataSource = new List<EmployeeDTO>();
-                        lblMessage.Text = "No matching employee found.";
                     }
-                    dataGridView.DataSource = binding; // Cập nhật DataGridView
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error searching employees: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    binding.DataSource = new List<EmployeeDTO>(); // Clear DataGridView on error
-                    lblMessage.Text = "Error during search.";
-                }
-            };
+                
 
-            txtFind.TextChanged += (s, e) =>
-            {
-                lblMessage.Text = "";
             };
+        
+
+            txtFind.TextChanged += async (s, e) =>
+            {
+                lblMessage.Text = string.Empty;
+                // Có thể debounce hoặc yêu cầu click nút để tránh gửi request liên tục
+                // Hiện tại giữ hành vi tìm kiếm tức thì như Category
+                string keyword = txtFind.Text.Trim();
+                if (string.IsNullOrEmpty(keyword))
+                {
+                    await LoadEmployees();
+                }
+                else
+                {
+                    try
+                    {
+                        List<EmployeeDTO> employees = await _clientService.SendRequest<string, List<EmployeeDTO>>("SearchEmployees", keyword);
+                        if (employees != null && employees.Any())
+                        {
+                            lblMessage.Text = string.Empty;
+                            binding.DataSource = employees;
+                        }
+                        else
+                        {
+                            lblMessage.Text = "No matching employee found.";
+                            binding.DataSource = new List<EmployeeDTO>();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Xử lý lỗi trong quá trình tìm kiếm khi TextChanged
+                        Console.WriteLine($"Error during real-time search: {ex.Message}");
+                        lblMessage.Text = "Error during search.";
+                        binding.DataSource = new List<EmployeeDTO>();
+                    }
+                }
+            };
+       
         }
 
         private async void Employees_Load(object sender, EventArgs e)

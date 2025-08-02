@@ -54,12 +54,6 @@
             tabPage2 = new TabPage();
             panel6 = new Panel();
             dgvOrder = new DataGridView();
-            dataGridViewTextBoxColumn1 = new DataGridViewTextBoxColumn();
-            EmployeeName = new DataGridViewTextBoxColumn();
-            CustomerName = new DataGridViewTextBoxColumn();
-            Date = new DataGridViewTextBoxColumn();
-            TotalPrice = new DataGridViewTextBoxColumn();
-            ViewDetails = new DataGridViewLinkColumn();
             panel5 = new Panel();
             btnPrint = new Button();
             btnFilter = new Button();
@@ -82,6 +76,12 @@
             sttEmployee = new ToolStripStatusLabel();
             flowLayoutPanel1 = new FlowLayoutPanel();
             helpProvider1 = new HelpProvider();
+            OrderID = new DataGridViewTextBoxColumn();
+            EmployeeName = new DataGridViewTextBoxColumn();
+            CustomerName = new DataGridViewTextBoxColumn();
+            Date = new DataGridViewTextBoxColumn();
+            TotalPrice = new DataGridViewTextBoxColumn();
+            ViewDetails = new DataGridViewLinkColumn();
             panel1.SuspendLayout();
             tabControl1.SuspendLayout();
             tabOrderDetails.SuspendLayout();
@@ -301,7 +301,7 @@
             dgvOrder.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvOrder.BackgroundColor = Color.LightBlue;
             dgvOrder.ColumnHeadersHeight = 60;
-            dgvOrder.Columns.AddRange(new DataGridViewColumn[] { dataGridViewTextBoxColumn1, EmployeeName, CustomerName, Date, TotalPrice, ViewDetails });
+            dgvOrder.Columns.AddRange(new DataGridViewColumn[] { OrderID, EmployeeName, CustomerName, Date, TotalPrice, ViewDetails });
             dgvOrder.Dock = DockStyle.Fill;
             dgvOrder.Location = new Point(0, 0);
             dgvOrder.MultiSelect = false;
@@ -311,58 +311,7 @@
             dgvOrder.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvOrder.Size = new Size(436, 345);
             dgvOrder.TabIndex = 3;
-            // 
-            // dataGridViewTextBoxColumn1
-            // 
-            dataGridViewTextBoxColumn1.DataPropertyName = "ID";
-            dataGridViewTextBoxColumn1.HeaderText = "ID";
-            dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            dataGridViewTextBoxColumn1.ReadOnly = true;
-            // 
-            // EmployeeName
-            // 
-            EmployeeName.DataPropertyName = "EmployeeName";
-            EmployeeName.HeaderText = "Employee";
-            EmployeeName.Name = "EmployeeName";
-            EmployeeName.ReadOnly = true;
-            // 
-            // CustomerName
-            // 
-            CustomerName.DataPropertyName = "CustomerName";
-            CustomerName.HeaderText = "Customer";
-            CustomerName.Name = "CustomerName";
-            CustomerName.ReadOnly = true;
-            // 
-            // Date
-            // 
-            Date.DataPropertyName = "Date";
-            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle4.Format = "dd/MM/yyyy";
-            dataGridViewCellStyle4.NullValue = "dd/MM/yyyy";
-            Date.DefaultCellStyle = dataGridViewCellStyle4;
-            Date.HeaderText = "Create Date";
-            Date.Name = "Date";
-            Date.ReadOnly = true;
-            // 
-            // TotalPrice
-            // 
-            TotalPrice.DataPropertyName = "TotalPrice";
-            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle5.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            dataGridViewCellStyle5.ForeColor = Color.Blue;
-            dataGridViewCellStyle5.Format = "N0";
-            TotalPrice.DefaultCellStyle = dataGridViewCellStyle5;
-            TotalPrice.HeaderText = "Total Price";
-            TotalPrice.Name = "TotalPrice";
-            TotalPrice.ReadOnly = true;
-            // 
-            // ViewDetails
-            // 
-            ViewDetails.DataPropertyName = "ViewDetails";
-            ViewDetails.HeaderText = "Details";
-            ViewDetails.Name = "ViewDetails";
-            ViewDetails.ReadOnly = true;
-            ViewDetails.Text = "View Details";
+            dgvOrder.CellContentClick += dgvOrder_CellContentClick;
             // 
             // panel5
             // 
@@ -627,6 +576,59 @@
             flowLayoutPanel1.TabIndex = 0;
             flowLayoutPanel1.Paint += flowLayoutPanel1_Paint;
             // 
+            // OrderID
+            // 
+            OrderID.DataPropertyName = "ID";
+            OrderID.HeaderText = "ID";
+            OrderID.Name = "OrderID";
+            OrderID.ReadOnly = true;
+            // 
+            // EmployeeName
+            // 
+            EmployeeName.DataPropertyName = "EmployeeName";
+            EmployeeName.HeaderText = "Employee";
+            EmployeeName.Name = "EmployeeName";
+            EmployeeName.ReadOnly = true;
+            // 
+            // CustomerName
+            // 
+            CustomerName.DataPropertyName = "CustomerName";
+            CustomerName.HeaderText = "Customer";
+            CustomerName.Name = "CustomerName";
+            CustomerName.ReadOnly = true;
+            // 
+            // Date
+            // 
+            Date.DataPropertyName = "Date";
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.Format = "dd/MM/yyyy";
+            dataGridViewCellStyle4.NullValue = "dd/MM/yyyy";
+            Date.DefaultCellStyle = dataGridViewCellStyle4;
+            Date.HeaderText = "Create Date";
+            Date.Name = "Date";
+            Date.ReadOnly = true;
+            // 
+            // TotalPrice
+            // 
+            TotalPrice.DataPropertyName = "TotalPrice";
+            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle5.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle5.ForeColor = Color.Blue;
+            dataGridViewCellStyle5.Format = "N0";
+            TotalPrice.DefaultCellStyle = dataGridViewCellStyle5;
+            TotalPrice.HeaderText = "Total Price";
+            TotalPrice.Name = "TotalPrice";
+            TotalPrice.ReadOnly = true;
+            // 
+            // ViewDetails
+            // 
+            ViewDetails.DataPropertyName = "ViewDetails";
+            ViewDetails.HeaderText = "Details";
+            ViewDetails.Name = "ViewDetails";
+            ViewDetails.ReadOnly = true;
+            ViewDetails.Text = "View Details";
+            ViewDetails.UseColumnTextForLinkValue = true;
+            // 
             // frmSale
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -694,12 +696,6 @@
         private DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
         private DataGridViewTextBoxColumn dataGridViewTextBoxColumn4;
         private DataGridViewTextBoxColumn dataGridViewTextBoxColumn5;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
-        private DataGridViewTextBoxColumn EmployeeName;
-        private DataGridViewTextBoxColumn CustomerName;
-        private DataGridViewTextBoxColumn Date;
-        private DataGridViewTextBoxColumn TotalPrice;
-        private DataGridViewLinkColumn ViewDetails;
         private Label label1;
         private TextBox txtRevenue;
         private Label label3;
@@ -713,5 +709,11 @@
         private HelpProvider helpProvider1;
         private Button btnPrint;
         public DataGridView dgvOrder;
+        private DataGridViewTextBoxColumn OrderID;
+        private DataGridViewTextBoxColumn EmployeeName;
+        private DataGridViewTextBoxColumn CustomerName;
+        private DataGridViewTextBoxColumn Date;
+        private DataGridViewTextBoxColumn TotalPrice;
+        private DataGridViewLinkColumn ViewDetails;
     }
 }

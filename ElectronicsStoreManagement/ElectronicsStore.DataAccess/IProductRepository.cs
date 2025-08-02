@@ -10,7 +10,9 @@ namespace ElectronicsStore.DataAccess
     {
         List<Products> GetAll();
         Products? GetById(int id);
-        Products? GetByName(string key);
+        Products? Get1ByName(string key);
+        List<Products> GetByName(string key);
+
         void Add(Products product);
         void Update(Products product);
         void UpdateImage(int productId, string imageFileName);
