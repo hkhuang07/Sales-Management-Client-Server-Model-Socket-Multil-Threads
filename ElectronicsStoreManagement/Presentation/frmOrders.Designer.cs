@@ -62,6 +62,7 @@
             CustomerName = new DataGridViewTextBoxColumn();
             Date = new DataGridViewTextBoxColumn();
             TotalPrice = new DataGridViewTextBoxColumn();
+            Status = new DataGridViewTextBoxColumn();
             Note = new DataGridViewTextBoxColumn();
             ViewDetails = new DataGridViewLinkColumn();
             groupBox3.SuspendLayout();
@@ -346,7 +347,7 @@
             dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView.BackgroundColor = Color.LightBlue;
             dataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView.Columns.AddRange(new DataGridViewColumn[] { ID, EmployeeName, CustomerName, Date, TotalPrice, Note, ViewDetails });
+            dataGridView.Columns.AddRange(new DataGridViewColumn[] { ID, EmployeeName, CustomerName, Date, TotalPrice, Status, Note, ViewDetails });
             dataGridView.Dock = DockStyle.Fill;
             dataGridView.Location = new Point(3, 21);
             dataGridView.MultiSelect = false;
@@ -400,6 +401,13 @@
             TotalPrice.HeaderText = "Total Price";
             TotalPrice.Name = "TotalPrice";
             TotalPrice.ReadOnly = true;
+            // 
+            // Status
+            // 
+            Status.DataPropertyName = "Status";
+            Status.HeaderText = "Status";
+            Status.Name = "Status";
+            Status.ReadOnly = true;
             // 
             // Note
             // 
@@ -477,6 +485,7 @@
         private DataGridViewTextBoxColumn CustomerName;
         private DataGridViewTextBoxColumn Date;
         private DataGridViewTextBoxColumn TotalPrice;
+        private DataGridViewTextBoxColumn Status;
         private DataGridViewTextBoxColumn Note;
         private DataGridViewLinkColumn ViewDetails;
         //private ToolStripButton btnExport;

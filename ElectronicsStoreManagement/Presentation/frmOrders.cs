@@ -26,157 +26,156 @@ namespace ElectronicsStore.Presentation
 
         public frmOrders(ClientService clientService)
         {
-            _clientService = clientService;
-            InitializeComponent();
-            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
-            helpProvider1.HelpNamespace = helpURL + "orders.html";
-        }
-        public frmOrders()
-        {
-            _clientService = new ClientService("127.0.0.1", 301);
-            InitializeComponent();
-            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
-            helpProvider1.HelpNamespace = helpURL + "orders.html";
+             _clientService = clientService;
+             InitializeComponent();
+             string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+             helpProvider1.HelpNamespace = helpURL + "orders.html";
+         }
+         public frmOrders()
+         {
+             _clientService = new ClientService("127.0.0.1", 301);
+             InitializeComponent();
+             string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+             helpProvider1.HelpNamespace = helpURL + "orders.html";
         }
 
         private void SetupToolStrip()
         {
-            // Nút di chuyển đến đầu tiên
-            btnBegin.Click += (s, e) =>
-            {
-                if (binding.Count > 0)
-                    binding.MoveFirst();
-                // DataGridView is already bound to binding, no need to re-assign
-                // dataGridView.DataSource = binding; 
-            };
+             // Nút di chuyển đến đầu tiên
+             btnBegin.Click += (s, e) =>
+             {
+                 if (binding.Count > 0)
+                     binding.MoveFirst();
+                 // DataGridView is already bound to binding, no need to re-assign
+                 // dataGridView.DataSource = binding; 
+             };
 
-            // Nút di chuyển đến dòng trước
-            btnPrevious.Click += (s, e) =>
-            {
-                if (binding.Position > 0)
-                    binding.MovePrevious();
-                // DataGridView is already bound to binding, no need to re-assign
-                // dataGridView.DataSource = binding;
-            };
+             // Nút di chuyển đến dòng trước
+             btnPrevious.Click += (s, e) =>
+             {
+                 if (binding.Position > 0)
+                     binding.MovePrevious();
+                 // DataGridView is already bound to binding, no need to re-assign
+                 // dataGridView.DataSource = binding;
+             };
 
-            // Nút di chuyển đến dòng tiếp theo
-            btnNext.Click += (s, e) =>
-            {
-                if (binding.Position < binding.Count - 1)
-                    binding.MoveNext();
-                // DataGridView is already bound to binding, no need to re-assign
-                // dataGridView.DataSource = binding;
-            };
+             // Nút di chuyển đến dòng tiếp theo
+             btnNext.Click += (s, e) =>
+             {
+                 if (binding.Position < binding.Count - 1)
+                     binding.MoveNext();
+                 // DataGridView is already bound to binding, no need to re-assign
+                 // dataGridView.DataSource = binding;
+             };
 
-            // Nút di chuyển đến cuối cùng
-            btnEnd.Click += (s, e) =>
-            {
-                if (binding.Count > 0)
-                    binding.MoveLast();
-                // DataGridView is already bound to binding, no need to re-assign
-                // dataGridView.DataSource = binding;
-            };
+             // Nút di chuyển đến cuối cùng
+             btnEnd.Click += (s, e) =>
+             {
+                 if (binding.Count > 0)
+                     binding.MoveLast();
+                 // DataGridView is already bound to binding, no need to re-assign
+                 // dataGridView.DataSource = binding;
+             };
 
-            // Nút tìm kiếm
-            btnFind.Click += async (s, e) => // Made async to await client service calls
-            {
-                lblMessage.Text = "";
+             // Nút tìm kiếm
+             btnFind.Click += async (s, e) => // Made async to await client service calls
+             {
+                 lblMessage.Text = "";
 
-                string keyword = txtFind.Text.Trim();
-                try
-                {
-                    List<OrderDTO> filteredOrders;
+                 string keyword = txtFind.Text.Trim();
+                 try
+                 {
+                     List<OrderDTO> filteredOrders;
 
-                    if (string.IsNullOrEmpty(keyword))
-                    {
-                        // If search box is empty, load all data
-                        filteredOrders = await _clientService.GetAllOrdersAsync();
-                    }
-                    else
-                    {
-                        // Call server to search orders by keyword
-                        filteredOrders = await _clientService.SearchOrdersAsync(keyword);
-                    }
+                     if (string.IsNullOrEmpty(keyword))
+                     {
+                         // If search box is empty, load all data
+                         filteredOrders = await _clientService.GetAllOrdersAsync();
+                     }
+                     else
+                     {
+                         // Call server to search orders by keyword
+                         filteredOrders = await _clientService.SearchOrdersAsync(keyword);
+                     }
 
-                    binding.DataSource = filteredOrders;
-                    // DataGridView is already bound to binding, no need to re-assign
-                    // dataGridView.DataSource = binding; 
-                    if (filteredOrders == null || filteredOrders.Count == 0)
-                    {
-                        lblMessage.Text = $"Orders: {keyword} not found!";
+                     binding.DataSource = filteredOrders;
+                     // DataGridView is already bound to binding, no need to re-assign
+                     // dataGridView.DataSource = binding; 
+                     if (filteredOrders == null || filteredOrders.Count == 0)
+                     {
+                         lblMessage.Text = $"Orders: {keyword} not found!";
 
-                    }
-                    else
-                    {
-                        lblMessage.Text = "";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    //lblMessage.Text = $"Orders: {ex.Message}";
-                    lblMessage.Text = $"Orders: {keyword} not found!";
+                     }
+                     else
+                     {
+                         lblMessage.Text = "";
+                     }
+                 }
+                 catch (Exception ex)
+                 {
+                     //lblMessage.Text = $"Orders: {ex.Message}";
+                     lblMessage.Text = $"Orders: {keyword} not found!";
 
-                }
+                 }
 
 
-            };
+             };
 
-            txtFind.TextChanged += async (s, e) =>
-            {
-                lblMessage.Text = "";
-                
-                string keyword = txtFind.Text.Trim();
-                try
-                {
-                    List<OrderDTO> filteredOrders;
+             txtFind.TextChanged += async (s, e) =>
+             {
+                 lblMessage.Text = "";
 
-                    if (string.IsNullOrEmpty(keyword))
-                    {
-                        // If search box is empty, load all data
-                        filteredOrders = await _clientService.GetAllOrdersAsync();
-                    }
-                    else
-                    {
-                        // Call server to search orders by keyword
-                        filteredOrders = await _clientService.SearchOrdersAsync(keyword);
-                    }
+                 string keyword = txtFind.Text.Trim();
+                 try
+                 {
+                     List<OrderDTO> filteredOrders;
 
-                    binding.DataSource = filteredOrders;
-                    // DataGridView is already bound to binding, no need to re-assign
-                    // dataGridView.DataSource = binding; 
-                    if (filteredOrders == null || filteredOrders.Count == 0)
-                    {
-                        lblMessage.Text = $"Orders: {keyword} not found!";
+                     if (string.IsNullOrEmpty(keyword))
+                     {
+                         // If search box is empty, load all data
+                         filteredOrders = await _clientService.GetAllOrdersAsync();
+                     }
+                     else
+                     {
+                         // Call server to search orders by keyword
+                         filteredOrders = await _clientService.SearchOrdersAsync(keyword);
+                     }
 
-                    }
-                    else
-                    {
-                        lblMessage.Text = "";
-                    }
-                }
-                catch (Exception ex)
-                {
-                   // lblMessage.Text = $"Orders: {ex.Message}";
-                    lblMessage.Text = $"Orders: {keyword} not found!";
-                }
+                     binding.DataSource = filteredOrders;
+                     // DataGridView is already bound to binding, no need to re-assign
+                     // dataGridView.DataSource = binding; 
+                     if (filteredOrders == null || filteredOrders.Count == 0)
+                     {
+                         lblMessage.Text = $"Orders: {keyword} not found!";
 
-            };
+                     }
+                     else
+                     {
+                         lblMessage.Text = "";
+                     }
+                 }
+                 catch (Exception ex)
+                 {
+                    // lblMessage.Text = $"Orders: {ex.Message}";
+                     lblMessage.Text = $"Orders: {keyword} not found!";
+                 }
+             };
         }
 
         private void btnPrint_Click(object sender, EventArgs e)
         {
-            if (dataGridView.CurrentRow != null)
-            {
-                id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
-                using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
-                {
-                    printOrder.ShowDialog();
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select an order to print.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+             if (dataGridView.CurrentRow != null)
+             {
+                 id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
+                 using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
+                 {
+                     printOrder.ShowDialog();
+                 }
+             }
+             else
+             {
+                 MessageBox.Show("Please select an order to print.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+             }
         }
         // Trong frmOrders
         private async Task LoadOrdersDataAsync()
@@ -210,39 +209,39 @@ namespace ElectronicsStore.Presentation
 
         private async void frmOrders_Load(object sender, EventArgs e)
         {
-            await LoadOrdersDataAsync(); // Lần đầu tiên tải dữ liệu khi form lo
+           await LoadOrdersDataAsync(); // Lần đầu tiên tải dữ liệu khi form lo
         }
 
         private async void btnCreate_Click(object sender, EventArgs e)
         {
-            using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, 0))
-            {
-                if (orderDetails.ShowDialog() == DialogResult.OK)
-                {
-                    // Await the data reload to ensure it completes before continuing
-                    await LoadOrdersDataAsync();
-                }
-            }
+             using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, 0))
+             {
+                 if (orderDetails.ShowDialog() == DialogResult.OK)
+                 {
+                     // Await the data reload to ensure it completes before continuing
+                     await LoadOrdersDataAsync();
+                 }
+             }
         }
 
         private async void btnUpdate_Click(object sender, EventArgs e)
         {
-            if (dataGridView.CurrentRow != null)
-            {
-                id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
-                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, id))
-                {
-                    if (orderDetails.ShowDialog() == DialogResult.OK)
-                    {
-                        // Chỉ gọi một lần nếu thành công
-                        await LoadOrdersDataAsync();
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select an order to update.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+             if (dataGridView.CurrentRow != null)
+             {
+                 id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
+                 using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, id))
+                 {
+                     if (orderDetails.ShowDialog() == DialogResult.OK)
+                     {
+                         // Chỉ gọi một lần nếu thành công
+                         await LoadOrdersDataAsync();
+                     }
+                 }
+             }
+             else
+             {
+                 MessageBox.Show("Please select an order to update.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+             }
         }
 
         private async void bntDelete_Click(object sender, EventArgs e)
@@ -379,49 +378,49 @@ namespace ElectronicsStore.Presentation
 
         private void btnExport_Click(object sender, EventArgs e)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Title = "Export to Excel file";
-            saveFileDialog.Filter = "Excel file|*.xls;*.xlsx";
-            saveFileDialog.FileName = "Orders_" + DateTime.Now.ToShortDateString().Replace("/", "_") + ".xlsx";
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                try
-                {
-                    DataTable table = new DataTable();
-                    table.Columns.AddRange(new DataColumn[]
-                    {
-                        new DataColumn("ID", typeof(int)),
-                        new DataColumn("Date", typeof(DateTime)),
-                        new DataColumn("EmployeeName", typeof(string)),
-                        new DataColumn("CustomerName", typeof(string)),
-                        new DataColumn("TotalPrice", typeof(double)),
-                        new DataColumn("Note", typeof(string)),
-                        new DataColumn("ViewDetails", typeof(string))
-                    });
+             SaveFileDialog saveFileDialog = new SaveFileDialog();
+             saveFileDialog.Title = "Export to Excel file";
+             saveFileDialog.Filter = "Excel file|*.xls;*.xlsx";
+             saveFileDialog.FileName = "Orders_" + DateTime.Now.ToShortDateString().Replace("/", "_") + ".xlsx";
+             if (saveFileDialog.ShowDialog() == DialogResult.OK)
+             {
+                 try
+                 {
+                     DataTable table = new DataTable();
+                     table.Columns.AddRange(new DataColumn[]
+                     {
+                         new DataColumn("ID", typeof(int)),
+                         new DataColumn("Date", typeof(DateTime)),
+                         new DataColumn("EmployeeName", typeof(string)),
+                         new DataColumn("CustomerName", typeof(string)),
+                         new DataColumn("TotalPrice", typeof(double)),
+                         new DataColumn("Note", typeof(string)),
+                         new DataColumn("ViewDetails", typeof(string))
+                     });
 
-                    // Use the data currently in the binding source to export
-                    List<OrderDTO> ordersToExport = binding.DataSource as List<OrderDTO>;
+                     // Use the data currently in the binding source to export
+                     List<OrderDTO> ordersToExport = binding.DataSource as List<OrderDTO>;
 
-                    if (ordersToExport != null)
-                    {
-                        foreach (var ord in ordersToExport)
-                        {
-                            table.Rows.Add(ord.ID, ord.Date, ord.EmployeeName, ord.CustomerName, ord.TotalPrice, ord.Note, "ViewDetails"); // Add a placeholder for ViewDetails
-                        }
-                    }
-                    using (XLWorkbook wb = new XLWorkbook())
-                    {
-                        var sheet = wb.Worksheets.Add(table, "Orders");
-                        sheet.Columns().AdjustToContents();
-                        wb.SaveAs(saveFileDialog.FileName);
-                        MessageBox.Show("Exported data to Excel file successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                }
-            }
+                     if (ordersToExport != null)
+                     {
+                         foreach (var ord in ordersToExport)
+                         {
+                             table.Rows.Add(ord.ID, ord.Date, ord.EmployeeName, ord.CustomerName, ord.TotalPrice, ord.Note, "ViewDetails"); // Add a placeholder for ViewDetails
+                         }
+                     }
+                     using (XLWorkbook wb = new XLWorkbook())
+                     {
+                         var sheet = wb.Worksheets.Add(table, "Orders");
+                         sheet.Columns().AdjustToContents();
+                         wb.SaveAs(saveFileDialog.FileName);
+                         MessageBox.Show("Exported data to Excel file successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                     }
+                 }
+                 catch (Exception ex)
+                 {
+                     MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                 }
+             }
         }
 
         private void dataGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)

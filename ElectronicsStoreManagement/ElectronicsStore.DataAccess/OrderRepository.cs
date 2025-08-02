@@ -42,6 +42,15 @@ namespace ElectronicsStore.DataAccess
                 .Include(o => o.ViewDetails)
                 .ToList();
         }
+        public List<Orders> GetByStatus(string status)
+        {
+            return _context.Order
+                .Where(o => o.Status == status)
+                .Include(o => o.Employee)
+                .Include(o => o.Customer)
+                .Include(o => o.ViewDetails)
+                .ToList();
+        }
 
         public List<Orders> GetByEmployeeId(int employeeId)
         {
@@ -69,6 +78,7 @@ namespace ElectronicsStore.DataAccess
         {
             _context.Order.Update(order);
         }
+    
 
         public void Delete(Orders order)
         {

@@ -6,6 +6,7 @@ using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -673,18 +674,57 @@ namespace ElectronicsStore.Server
                                     responseBase.Data = filteredCustomers;
                                     break;
 
+                                case "AddReturnCustomer":
+                                    try
+                                    {
+                                        var customerToAdd = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
+                                        // Gọi hàm Add đã được sửa đổi và lấy kết quả trả về
+                                        var addedCustomer = customerService.AddReturn(customerToAdd);
+
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Customer added successfully.";
+                                        // Gán đối tượng đã được thêm thành công (có ID) vào Data
+                                        responseBase.Data = addedCustomer;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Error adding customer: {ex.Message}";
+                                        responseBase.Data = null;
+                                    }
+                                    break;
                                 case "AddCustomer":
-                                    CustomerDTO customerToAdd = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
-                                    customerService.Add(customerToAdd);
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Customer added successfully.";
+                                    try
+                                    {
+                                        var customerToAdd = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
+                                        customerService.Add(customerToAdd);
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Customer added successfully.";
+                                        responseBase.Data = customerToAdd; 
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Error adding customer: {ex.Message}";
+                                        responseBase.Data = null; // Hoặc một đối tượng CustomerDTO rỗng
+                                    }
                                     break;
 
                                 case "UpdateCustomer":
-                                    CustomerDTO customerToUpdate = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
-                                    customerService.Update(customerToUpdate.ID, customerToUpdate);
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Customer updated successfully.";
+                                    try
+                                    {
+                                        CustomerDTO customerToUpdate = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
+                                        customerService.Update(customerToUpdate.ID, customerToUpdate);
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Customer updated successfully.";
+                                        responseBase.Data = true; 
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Error updating customer: {ex.Message}";
+                                        responseBase.Data = false; // <--- Sửa ở đây để trả về false khi có lỗi
+                                    }
                                     break;
 
                                 case "DeleteCustomer":
@@ -707,8 +747,8 @@ namespace ElectronicsStore.Server
                                 case "GetOrderById":
                                     try
                                     {
-                                        int orderId = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                        var order = orderService.GetById(orderId);
+                                        int id = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
+                                        var order = orderService.GetById(id);
                                         if (order != null)
                                         {
                                             responseBase.Success = true;
@@ -718,10 +758,10 @@ namespace ElectronicsStore.Server
                                         else
                                         {
                                             responseBase.Success = false;
-                                            responseBase.Message = $"Order with ID {orderId} not found.";
+                                            responseBase.Message = $"Order with ID {id} not found.";
                                         }
                                     }
-                                    catch (Exception ex)
+                                    catch (Exception ex)        
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error retrieving order: {ex.Message}";
@@ -730,8 +770,8 @@ namespace ElectronicsStore.Server
                                 case "SearchOrder":
                                     try
                                     {
-                                        int orderId = requestBase.Data is long idLong ? (int)idLong : JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                        var order = orderService.GetById(orderId);
+                                        int searchorderId = requestBase.Data is long idLong ? (int)idLong : JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
+                                        var order = orderService.GetById(searchorderId);
                                         List<OrderDTO> orderList = new List<OrderDTO>();
 
                                         if (order != null)
@@ -744,7 +784,7 @@ namespace ElectronicsStore.Server
                                         else
                                         {
                                             responseBase.Success = false;
-                                            responseBase.Message = $"Order with ID {orderId} not found.";
+                                            responseBase.Message = $"Order with ID {searchorderId} not found.";
                                         }
                                         responseBase.Data = orderList; // Luôn trả về một danh sách
                                     }
@@ -785,7 +825,14 @@ namespace ElectronicsStore.Server
                                         responseBase.Message = $"Error retrieving orders by employee ID: {ex.Message}";
                                     }
                                     break;
-                                
+                                case "GetOrdersByStatus":
+                                    var status = requestBase.Data.ToString();
+                                    var filteredOrders = orderService.GetByStatus(status); // Cần thêm phương thức này vào OrderService
+                                    responseBase.Success = true;
+                                    responseBase.Message = $"Orders with status '{status}' retrieved successfully.";
+                                    responseBase.Data = filteredOrders;
+                                    break;
+
                                 case "CreateOrder":
                                     try
                                     {
@@ -825,6 +872,26 @@ namespace ElectronicsStore.Server
                                         responseBase.Success = false;
                                         responseBase.Message = $"Server error for action 'CreateOrder': {ex.Message}";
                                         responseBase.Data = -1; // Trả về -1 để báo hiệu lỗi
+                                    }
+                                    break;
+
+                                case "UpdateOrderStatus":
+                                    var orderStatusData = JObject.Parse(requestBase.Data.ToString());
+                                    int orderId = (int)orderStatusData["ID"];
+                                    string newStatus = (string)orderStatusData["Status"];
+
+                                    bool updated = orderService.UpdateStatus(orderId, newStatus); // Cần thêm phương thức này vào OrderService
+                                    if (updated)
+                                    {
+                                        responseBase.Success = true;
+                                        responseBase.Message = $"Order {orderId} status updated to '{newStatus}' successfully.";
+                                        responseBase.Data = true;
+                                    }
+                                    else
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Order {orderId} not found or status update failed.";
+                                        responseBase.Data = false;
                                     }
                                     break;
 
@@ -981,13 +1048,15 @@ namespace ElectronicsStore.Server
                     }
                     catch (JsonException jEx)
                     {
-                        //responseBase.Success = false;
+                        responseBase.Success = false;
                         responseBase.Message = $"Invalid JSON format received: {jEx.Message}. Request: '{requestJson}'";
                         Console.Error.WriteLine($"JSON Deserialization Error: {jEx.Message} | Raw request: '{requestJson}'");
                     }
                     catch (Exception ex)
                     {
+                        responseBase.Success = false;
                         responseBase.Message = $"Server error processing request: {ex.Message}";
+                     
                         Console.Error.WriteLine($"Error in HandleClientAsync (inner try-catch): {ex}");
                     }
                     finally

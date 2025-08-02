@@ -104,7 +104,7 @@ namespace ElectronicsStore.Presentation
         {
             try
             {
-                List<OrderDTO> orderList = await _clientService.GetAllOrdersAsync();
+                List<OrderDTO> orderList = await _clientService.GetCompletedOrdersAsync();
                 bindingOrder.DataSource = orderList;
                 dgvOrder.DataSource = bindingOrder;
                 UpdateRevenue();
@@ -115,6 +115,43 @@ namespace ElectronicsStore.Presentation
             }
         }
 
+        private async void btnPay_Click(object sender, EventArgs e)
+        {
+            if (dgvOrder.CurrentRow == null)
+            {
+                MessageBox.Show("Please select an order to Pay.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Lấy đối tượng OrderDTO từ dòng hiện tại
+            var selectedOrder = dgvOrder.CurrentRow.DataBoundItem as OrderDTO;
+
+            if (selectedOrder == null)
+            {
+                MessageBox.Show("Invalid order data.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                // Gửi yêu cầu lên server để cập nhật trạng thái
+                bool success = await _clientService.UpdateOrderStatusAsync(selectedOrder.ID, "Paid");
+
+                if (success)
+                {
+                    MessageBox.Show($"Order {selectedOrder.ID} has been marked as Paid.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadOrdersAsync(); // Tải lại danh sách sau khi cập nhật
+                }
+                else
+                {
+                    MessageBox.Show($"Failed to mark order {selectedOrder.ID} as Paid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while updating order status: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
         /// <summary>
         /// Handles the form load event, initializing product and order data.
         /// </summary>
@@ -199,9 +236,6 @@ namespace ElectronicsStore.Presentation
         }
 
 
-
-        // Order Details Management
-
         private void UpdateRevenue()
         {
             decimal totalRevenue = 0;
@@ -226,10 +260,6 @@ namespace ElectronicsStore.Presentation
             decimal total = orderDetails.Sum(x => x.Price * x.Quantity);
             txtTotalDetails.Text = total.ToString("N0");
         }
-
-
-
-        // Product Card Interactions
 
         private void SelectCard(object sender, EventArgs e)
         {
@@ -384,13 +414,6 @@ namespace ElectronicsStore.Presentation
                 if (currentOrderID == 0)
                 {
                     orderIdToConfirm = await _clientService.CreateTmpOrderAsync(orderWithDetails);
-
-                    /*var result = await _clientService.CreateOrderAsync(orderWithDetails);
-
-                    if (result is int)
-                    {
-                        orderIdToConfirm = (int)result;
-                    }*/
                 }
                 else
                 {
@@ -521,7 +544,7 @@ namespace ElectronicsStore.Presentation
                 return;
             }
 
-            int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["dataGridViewTextBoxColumn1"].Value);
+            int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderID"].Value);
             //int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
 
             using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
@@ -532,7 +555,7 @@ namespace ElectronicsStore.Presentation
 
         private void dgvOrder_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-              
+
             if (e.RowIndex >= 0 && e.ColumnIndex == dgvOrder.Columns["ViewDetails"].Index)
             {
                 int orderId = Convert.ToInt32(dgvOrder.Rows[e.RowIndex].Cells["OrderID"].Value);
@@ -543,6 +566,6 @@ namespace ElectronicsStore.Presentation
             }
         }
 
-
+      
     }
 }

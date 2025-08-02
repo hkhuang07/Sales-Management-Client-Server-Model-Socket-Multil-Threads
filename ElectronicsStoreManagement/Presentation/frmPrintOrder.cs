@@ -18,9 +18,6 @@ namespace ElectronicsStore.Presentation
 {
     public partial class frmPrintOrder : Form
     {
-        // Vẫn giữ ElectronicsStoreDataSet.OrderDetailsListDataTable nếu bạn đang sử dụng strongly-typed DataSet cho báo cáo.
-        // Nếu không, bạn có thể tạo một List<OrderDetailsDTO> và truyền vào ReportDataSource.
-        // Giả định bạn vẫn dùng DataSet cho ReportViewer.
         ElectronicsStoreDataSet.OrderDetailsListDataTable orderDetailsListDataTable = new ElectronicsStoreDataSet.OrderDetailsListDataTable();
         string reportsFolder = Application.StartupPath.Replace("bin\\Debug\\net8.0-windows", "Reports");
         int id; // Mã hóa đơn

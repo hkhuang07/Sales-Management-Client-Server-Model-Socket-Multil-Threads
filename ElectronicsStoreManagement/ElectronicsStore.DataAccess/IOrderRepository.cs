@@ -1,9 +1,10 @@
-﻿using System;
+﻿using ElectronicsStore.DataTransferObject;
+using System;
+using System.Collections.Generic;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace ElectronicsStore.DataAccess
 {
@@ -12,6 +13,7 @@ namespace ElectronicsStore.DataAccess
         List<Orders> GetAllWithDetails();
         List<Orders> GetAll();
         Orders? GetById(int id);
+        List<Orders> GetByStatus(string status);
 
         // New methods
         List<Orders> GetByCustomerId(int customerId);
@@ -20,10 +22,8 @@ namespace ElectronicsStore.DataAccess
         void Add(Orders entity);
         int Insert(Orders order); // Consider renaming to AddAndReturnId for clarity
         void Update(Orders order);
+
         void Delete(Orders order);
 
-        /*void DeleteOrderDetails(int orderId);
-        void AddOrderDetails(List<Order_Details> details);
-        void Save();    */
     }
 }

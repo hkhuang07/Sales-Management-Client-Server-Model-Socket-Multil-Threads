@@ -272,7 +272,7 @@ namespace ElectronicsStore.Client
 
         public async Task<CustomerDTO> AddCustomerAsync(CustomerDTO customerDto)
         {
-            return await SendRequest<CustomerDTO, CustomerDTO>("AddCustomer", customerDto);
+            return await SendRequest<CustomerDTO, CustomerDTO>("AddReturnCustomer", customerDto);
         }
 
         public async Task<bool> UpdateCustomerAsync(CustomerDTO customerDto)
@@ -292,7 +292,10 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<object, List<OrderDTO>>("GetAllOrders", null);
         }
-
+        public async Task<List<OrderDTO>> GetCompletedOrdersAsync()
+        {
+            return await SendRequest<string, List<OrderDTO>>("GetOrdersByStatus", "Completed");
+        }
         public async Task<OrderDTO> GetOrderByIdAsync(int orderId)
         {
             return await SendRequest<int, OrderDTO>("GetOrderById", orderId);
@@ -311,8 +314,11 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<OrderWithDetailsDTO, int>("CreateTmpOrder", orderWithDetails);
         }
-
-
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, string status)
+        {
+            var data = new { ID = orderId, Status = status };
+            return await SendRequest<object, bool>("UpdateOrderStatus", data);
+        }
         public async Task<bool> UpdateOrderWithDetailsAsync(OrderWithDetailsDTO orderWithDetails)
         {
             return await SendRequest<OrderWithDetailsDTO, bool>("UpdateOrder", orderWithDetails);

@@ -37,6 +37,13 @@ namespace ElectronicsStore.BusinessLogic
             return order != null ? _mapper.Map<OrderDTO>(order) : null;
         }
 
+        // Lọc danh sách theo trạng thái
+        public List<OrderDTO> GetByStatus(string status)
+        {
+            var orders = _repository.GetByStatus(status); // Cần thêm phương thức này vào OrderRepository
+            return _mapper.Map<List<OrderDTO>>(orders);
+        }
+
         // --- THÊM MỚI ---
         public void Add(OrderDTO dto)
         {
@@ -86,8 +93,8 @@ namespace ElectronicsStore.BusinessLogic
                     var order = _mapper.Map<Orders>(orderDto);
                     order.Date = DateTime.Now;
                     order.Status = "Pending"; // Đảm bảo trạng thái ban đầu là Pending
-                    order.CustomerID = 0; // Gán CustomerID = null để tránh lỗi khóa ngoại
-                    order.EmployeeID = 0; // Gán EmployeeID = null để tránh lỗi khóa ngoại
+                    order.CustomerID = 1; // Gán CustomerID = null để tránh lỗi khóa ngoại
+                    order.EmployeeID = 1; // Gán EmployeeID = null để tránh lỗi khóa ngoại
 
                     _repository.Insert(order);
                     _unitOfWork.SaveChanges(); // Lần lưu đầu tiên để lấy Order.ID
@@ -155,6 +162,21 @@ namespace ElectronicsStore.BusinessLogic
             _mapper.Map(dto, existing);
             _repository.Update(existing);
             _unitOfWork.SaveChanges(); // Sử dụng UnitOfWork
+        }
+
+        // Cập nhật trạng thái của một đơn hàng
+        public bool UpdateStatus(int orderId, string newStatus)
+        {
+            var order = _repository.GetById(orderId);
+            if (order == null)
+            {
+                return false;
+            }
+
+            order.Status = newStatus;
+            _repository.Update(order);
+            _unitOfWork.SaveChanges();
+            return true;
         }
 
         public void UpdateOrder(OrderDTO orderDto, List<OrderDetailsDTO> details)

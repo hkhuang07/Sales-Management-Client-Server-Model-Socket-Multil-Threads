@@ -72,7 +72,7 @@ namespace ElectronicsStore.Presentation
             txtCustomerAddress.Enabled = value;
             txtNote.Enabled = value;
             cboEmployee.Enabled = value;
-            cboCustomer.Enabled = !value; // Khi thêm mới thì không cho chọn ComboBox
+            //cboCustomer.Enabled = value; // Khi thêm mới thì không cho chọn ComboBox
             btnConfirm.Enabled = value;
             chkPrintInvoice.Enabled = value;
 
@@ -85,9 +85,10 @@ namespace ElectronicsStore.Presentation
             await LoadDataAsync(); // Load data asynchronously
             EnableControls(false); // Initially disable controls until an action is chosen (Add/Update customer for the order)
             cboCustomer.SelectedIndex = -1;
-            cboEmployee.SelectedIndex = -1; 
+            cboEmployee.SelectedIndex = -1;
         }
 
+        
         private async void btnConfirm_Click(object sender, EventArgs e)
         {
             // Bước 1: Validate đầu vào
@@ -111,7 +112,9 @@ namespace ElectronicsStore.Presentation
                 if (_isAddingNewCustomer)
                 {
                     var addedCustomer = await _clientService.AddCustomerAsync(customerDto);
-                    if (addedCustomer != null)
+                    // Kiểm tra kết quả trả về từ server.
+                    // Nếu thành công, addedCustomer sẽ chứa đối tượng với ID mới.
+                    if (addedCustomer != null && addedCustomer.ID > 0)
                     {
                         CustomerID = addedCustomer.ID;
                         CustomerName = addedCustomer.CustomerName;
@@ -122,10 +125,18 @@ namespace ElectronicsStore.Presentation
                         return;
                     }
                 }
-                else
+                else // _isUpdatingCustomer
                 {
-                    customerDto.ID = _selectedCustomerId;
+                    if (cboCustomer.SelectedValue == null)
+                    {
+                        MessageBox.Show("Please select a customer to update.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    customerDto.ID = Convert.ToInt32(cboCustomer.SelectedValue);
                     bool updated = await _clientService.UpdateCustomerAsync(customerDto);
+
+                    // Kiểm tra kết quả trả về từ server
                     if (updated)
                     {
                         CustomerID = customerDto.ID;
@@ -138,23 +149,18 @@ namespace ElectronicsStore.Presentation
                     }
                 }
 
-                // Bước 3: Gán các giá trị cho các public property
+                // Bước 3: Gán các giá trị và đóng form
                 EmployeeID = (int)cboEmployee.SelectedValue;
                 Note = txtNote.Text.Trim();
                 PrintInvoice = chkPrintInvoice.Checked;
-
-                // Bước 4: Đóng form với DialogResult.OK
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occurred during confirmation: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Giữ form mở để người dùng có thể sửa lỗi
             }
         }
-
-
         private void btnAdd_Click(object sender, EventArgs e)
         {
             _isAddingNewCustomer = true;
@@ -170,29 +176,64 @@ namespace ElectronicsStore.Presentation
 
         private async void btnUpdate_Click(object sender, EventArgs e)
         {
+            // Kiểm tra xem đã có khách hàng được chọn chưa
             if (cboCustomer.SelectedValue == null)
             {
                 MessageBox.Show("Please select a customer to update.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            _isAddingNewCustomer = false;
+
             _selectedCustomerId = Convert.ToInt32(cboCustomer.SelectedValue);
+            // Kiểm tra giá trị _selectedCustomerId có hợp lệ không
+            if (_selectedCustomerId <= 0)
+            {
+                MessageBox.Show("Invalid customer selected.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            _isAddingNewCustomer = false;
+            cboCustomer.Enabled = true;
             EnableControls(true);
+
+            // Load chi tiết khách hàng đã chọn vào các textbox
             await LoadCustomerDetails(_selectedCustomerId);
         }
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            this.Dispose();
+        }
 
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            frmConfirm_Load(sender, e); // Reload the form to reset controls
+        }
 
         private async void cboCustomer_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cboCustomer.SelectedValue != null)
+            // Kiểm tra xem có mục nào được chọn không
+            if (cboCustomer.SelectedItem != null)
             {
-                _selectedCustomerId = Convert.ToInt32(cboCustomer.SelectedValue);
-                await LoadCustomerDetails(_selectedCustomerId);
+                // Lấy đối tượng CustomerDTO từ mục đã chọn
+                if (cboCustomer.SelectedItem is CustomerDTO selectedCustomer)
+                {
+                    _selectedCustomerId = selectedCustomer.ID;
+                    await LoadCustomerDetails(_selectedCustomerId);
+                }
+                else
+                {
+                    // Xử lý trường hợp không phải là CustomerDTO
+                    // Đây là trường hợp an toàn, có thể không cần thiết nếu luồng code đúng
+                    _selectedCustomerId = 0;
+                    // Clear các textbox liên quan
+                    txtCustomerAddress.Clear();
+                    txtCustomerPhone.Clear();
+                    txtCustomerEmail.Clear();
+                }
             }
         }
 
 
-        private async Task LoadCustomerDetails(int customerId)
+        private async Task LoadCustomerDetails(int customerId)  
         {
             try
             {

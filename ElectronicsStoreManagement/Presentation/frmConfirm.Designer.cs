@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             groupBox1 = new GroupBox();
+            btnCancel = new Button();
             chkPrintInvoice = new CheckBox();
             cboCustomer = new ComboBox();
             cboEmployee = new ComboBox();
@@ -53,6 +54,7 @@
             // groupBox1
             // 
             groupBox1.BackColor = Color.SkyBlue;
+            groupBox1.Controls.Add(btnCancel);
             groupBox1.Controls.Add(chkPrintInvoice);
             groupBox1.Controls.Add(cboCustomer);
             groupBox1.Controls.Add(cboEmployee);
@@ -80,6 +82,19 @@
             groupBox1.TabStop = false;
             groupBox1.Text = "Customer Information :";
             // 
+            // btnCancel
+            // 
+            btnCancel.Anchor = AnchorStyles.Top;
+            btnCancel.BackColor = Color.DarkTurquoise;
+            btnCancel.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
+            btnCancel.Location = new Point(415, 320);
+            btnCancel.Name = "btnCancel";
+            btnCancel.Size = new Size(75, 29);
+            btnCancel.TabIndex = 12;
+            btnCancel.Text = "Cancel";
+            btnCancel.UseVisualStyleBackColor = false;
+            btnCancel.Click += btnCancel_Click;
+            // 
             // chkPrintInvoice
             // 
             chkPrintInvoice.AutoSize = true;
@@ -98,6 +113,7 @@
             cboCustomer.Size = new Size(218, 25);
             cboCustomer.TabIndex = 1;
             cboCustomer.Text = "No Name";
+            cboCustomer.SelectedIndexChanged += cboCustomer_SelectedIndexChanged;
             // 
             // cboEmployee
             // 
@@ -126,19 +142,20 @@
             btnClose.Anchor = AnchorStyles.Top;
             btnClose.BackColor = Color.Turquoise;
             btnClose.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
-            btnClose.Location = new Point(549, 319);
+            btnClose.Location = new Point(520, 319);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(80, 30);
             btnClose.TabIndex = 11;
             btnClose.Text = "Close";
             btnClose.UseVisualStyleBackColor = false;
+            btnClose.Click += btnClose_Click;
             // 
             // btnConfirm
             // 
             btnConfirm.Anchor = AnchorStyles.Top;
             btnConfirm.BackColor = Color.DeepSkyBlue;
             btnConfirm.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
-            btnConfirm.Location = new Point(383, 319);
+            btnConfirm.Location = new Point(305, 319);
             btnConfirm.Name = "btnConfirm";
             btnConfirm.Size = new Size(80, 30);
             btnConfirm.TabIndex = 10;
@@ -152,7 +169,7 @@
             btnUpdate.BackColor = Color.RoyalBlue;
             btnUpdate.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
             btnUpdate.ForeColor = Color.AliceBlue;
-            btnUpdate.Location = new Point(217, 319);
+            btnUpdate.Location = new Point(195, 319);
             btnUpdate.Name = "btnUpdate";
             btnUpdate.Size = new Size(80, 30);
             btnUpdate.TabIndex = 9;
@@ -166,7 +183,7 @@
             btnAdd.BackColor = Color.Navy;
             btnAdd.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
             btnAdd.ForeColor = Color.AliceBlue;
-            btnAdd.Location = new Point(51, 319);
+            btnAdd.Location = new Point(85, 319);
             btnAdd.Name = "btnAdd";
             btnAdd.Size = new Size(80, 30);
             btnAdd.TabIndex = 8;
@@ -315,5 +332,6 @@
         private Label label6;
         public ComboBox cboCustomer;
         public CheckBox chkPrintInvoice;
+        private Button btnCancel;
     }
 }

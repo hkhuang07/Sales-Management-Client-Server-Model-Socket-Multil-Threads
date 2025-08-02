@@ -91,7 +91,18 @@ namespace ElectronicsStore.BusinessLogic
             var entity = _mapper.Map<Customers>(dto);
             _repository.Add(entity);
             _unitOfWork.SaveChanges();
+        }
+        public CustomerDTO AddReturn(CustomerDTO dto)
+        {
+            Validate(dto);
 
+            var entity = _mapper.Map<Customers>(dto);
+            _repository.Add(entity);
+            _unitOfWork.SaveChanges(); // <-- ID sẽ được gán cho entity sau khi save
+
+            // Map entity đã được cập nhật ID trở lại DTO và trả về
+            var addedDto = _mapper.Map<CustomerDTO>(entity);
+            return addedDto;
         }
 
         //Cập nhật
@@ -100,7 +111,8 @@ namespace ElectronicsStore.BusinessLogic
             Validate(dto);
 
             var entity = _repository.GetById(id);
-            if (entity == null) throw new Exception($"Customer not found with ID = {id}.");
+            if (entity == null) 
+                throw new Exception($"Customer not found with ID = {id}.");
 
             entity.CustomerName = dto.CustomerName;
             entity.CustomerAddress = dto.CustomerAddress;
