@@ -42,7 +42,7 @@
             // 
             picImage.Location = new Point(0, 0);
             picImage.Name = "picImage";
-            picImage.Size = new Size(100, 100);
+            picImage.Size = new Size(180, 100);
             picImage.SizeMode = PictureBoxSizeMode.Zoom;
             picImage.TabIndex = 0;
             picImage.TabStop = false;
@@ -53,7 +53,7 @@
             lblProductName.AutoSize = true;
             lblProductName.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             lblProductName.ForeColor = Color.SteelBlue;
-            lblProductName.Location = new Point(3, 129);
+            lblProductName.Location = new Point(13, 129);
             lblProductName.Name = "lblProductName";
             lblProductName.Size = new Size(0, 21);
             lblProductName.TabIndex = 4;
@@ -64,7 +64,7 @@
             lblProductPrice.AutoSize = true;
             lblProductPrice.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             lblProductPrice.ForeColor = Color.SteelBlue;
-            lblProductPrice.Location = new Point(3, 182);
+            lblProductPrice.Location = new Point(13, 176);
             lblProductPrice.Name = "lblProductPrice";
             lblProductPrice.Size = new Size(0, 21);
             lblProductPrice.TabIndex = 7;
@@ -75,7 +75,7 @@
             btnPlus.BackColor = Color.DeepSkyBlue;
             btnPlus.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnPlus.ForeColor = Color.AliceBlue;
-            btnPlus.Location = new Point(106, 3);
+            btnPlus.Location = new Point(187, 14);
             btnPlus.Name = "btnPlus";
             btnPlus.Size = new Size(40, 40);
             btnPlus.TabIndex = 12;
@@ -88,7 +88,7 @@
             btnMinus.BackColor = Color.DodgerBlue;
             btnMinus.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnMinus.ForeColor = Color.AliceBlue;
-            btnMinus.Location = new Point(152, 3);
+            btnMinus.Location = new Point(187, 60);
             btnMinus.Name = "btnMinus";
             btnMinus.Size = new Size(40, 40);
             btnMinus.TabIndex = 12;
@@ -101,7 +101,7 @@
             label1.AutoSize = true;
             label1.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
             label1.ForeColor = Color.Navy;
-            label1.Location = new Point(3, 103);
+            label1.Location = new Point(13, 103);
             label1.Name = "label1";
             label1.Size = new Size(100, 17);
             label1.TabIndex = 4;
@@ -113,7 +113,7 @@
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
             label2.ForeColor = Color.Navy;
-            label2.Location = new Point(3, 156);
+            label2.Location = new Point(13, 150);
             label2.Name = "label2";
             label2.Size = new Size(72, 17);
             label2.TabIndex = 7;
@@ -132,7 +132,7 @@
             Controls.Add(lblProductName);
             Controls.Add(picImage);
             Name = "ProductCard";
-            Size = new Size(200, 220);
+            Size = new Size(230, 200);
             Load += ProductCard_Load;
             ((System.ComponentModel.ISupportInitialize)picImage).EndInit();
             ResumeLayout(false);

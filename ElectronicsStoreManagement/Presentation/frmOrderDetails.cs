@@ -86,6 +86,7 @@ namespace ElectronicsStore.Presentation
                 cboCustomer.SelectedValue = CustomerID;
             else
                 cboCustomer.SelectedIndex = -1; // Ensure no selection if CustomerID is not found
+            
         }
 
         public void EnableControls()
@@ -105,7 +106,7 @@ namespace ElectronicsStore.Presentation
 
         private async void frmOrderDetails_Load(object sender, EventArgs e)
         {
-                await LoadData(); // Await LoadData to ensure comboboxes are populated
+            await LoadData(); // Await LoadData to ensure comboboxes are populated
             dataGridView.AutoGenerateColumns = false;
 
             if (OrderID != 0)
@@ -119,6 +120,7 @@ namespace ElectronicsStore.Presentation
                         cboEmployee.SelectedValue = order.EmployeeID;
                         cboCustomer.SelectedValue = order.CustomerID;
                         txtNote.Text = order.Note;
+                        cboStatus.Text = order.Status ?? ""; // Default to "Pending" if Status is null
                         //dtpOrderDate.Value = order.Date; // Assuming you have a DateTimePicker for order date
 
                         // Get Order Details
@@ -313,6 +315,7 @@ namespace ElectronicsStore.Presentation
                 CustomerID = Convert.ToInt32(cboCustomer.SelectedValue),
                 CustomerName = cboCustomer.Text,
                 Date = DateTime.Now.Date,
+                Status = cboStatus.Text,
                 Note = txtNote.Text,
                 TotalPrice = orderDetails.Sum(d => (decimal)d.TotalPrice)
             };

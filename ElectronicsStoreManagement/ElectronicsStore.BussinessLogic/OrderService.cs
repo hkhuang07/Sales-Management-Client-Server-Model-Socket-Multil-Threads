@@ -132,6 +132,7 @@ namespace ElectronicsStore.BusinessLogic
                     }
 
                     // Cập nhật các thông tin từ DTO
+                    order.ID = dto.OrderID; // Giữ nguyên ID để cập nhật
                     order.CustomerID = dto.CustomerID;
                     order.EmployeeID = dto.EmployeeID;
                     order.Note = dto.Note;

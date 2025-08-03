@@ -37,8 +37,10 @@ namespace ElectronicsStore.Presentation
         private readonly ClientService _clientService;
 
         public string employeeName = ""; // Tên người dùng hiển thị vào thanh Status.
-        public int currentEmployeeId = -1; // ID của nhân viên đang đăng nhập
         public bool currentEmployeeRole = false; // Vai trò của nhân viên đang đăng nhập (true = Admin, false = Staff)
+
+        public int userID { get; private set; }
+
 
         public frmMain()
         {
@@ -83,14 +85,14 @@ namespace ElectronicsStore.Presentation
                 NotLoggedIn();
                 // Reset thông tin nhân viên khi đăng xuất
                 employeeName = "";
-                currentEmployeeId = -1;
+                userID = -1;
                 currentEmployeeRole = false;
             }
         }
 
         private void mnuChangePass_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(employeeName) || currentEmployeeId == -1)
+            if (string.IsNullOrEmpty(employeeName) || userID == -1)
             {
                 MessageBox.Show("You are not logged in!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -99,7 +101,7 @@ namespace ElectronicsStore.Presentation
             if (changePass == null || changePass.IsDisposed)
             {
                 // Pass currentEmployeeId, employeeName, and _clientService
-                changePass = new frmChangePass(currentEmployeeId, employeeName, _clientService);
+                changePass = new frmChangePass(userID, employeeName, _clientService);
                 changePass.MdiParent = this;
                 changePass.Show();
             }
@@ -199,7 +201,7 @@ namespace ElectronicsStore.Presentation
             
             if (sale == null || sale.IsDisposed)
             {
-                sale = new frmSale(_clientService);
+                sale = new frmSale(_clientService, userID);
                 sale.MdiParent = this;
                 sale.Show();
             }
@@ -364,7 +366,7 @@ namespace ElectronicsStore.Presentation
                     if (loginResponse != null)
                     {
                         employeeName = loginResponse.FullName;
-                        currentEmployeeId = loginResponse.UserId;
+                        userID = loginResponse.UserId;
                         currentEmployeeRole = loginResponse.Roles;
 
                         isAuthenticated = true;

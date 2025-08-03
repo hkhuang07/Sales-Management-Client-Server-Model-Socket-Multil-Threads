@@ -18,6 +18,8 @@ namespace ElectronicsStore.Presentation
     public partial class frmSale : Form
     {
         private int currentOrderID = 0;
+        public int UserID { get; private set; }
+
         private List<OrderDetailsDTO> orderDetails = new List<OrderDetailsDTO>();
         string imagesFolder = Path.Combine(Application.StartupPath, "Images");
 
@@ -34,6 +36,14 @@ namespace ElectronicsStore.Presentation
             helpProvider1.HelpNamespace = helpURL + "sale.html";
         }
 
+        public frmSale(ClientService clientService,int userID)
+        {
+            _clientService = clientService;
+            InitializeComponent();
+            UserID = userID;
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "sale.html";
+        }
         public frmSale()
         {
             _clientService = new ClientService("127.0.0.1", 301);
@@ -104,7 +114,7 @@ namespace ElectronicsStore.Presentation
         {
             try
             {
-                List<OrderDTO> orderList = await _clientService.GetCompletedOrdersAsync();
+                List<OrderDTO> orderList = await _clientService.GetOrdersByStatus();
                 bindingOrder.DataSource = orderList;
                 dgvOrder.DataSource = bindingOrder;
                 UpdateRevenue();
@@ -161,6 +171,8 @@ namespace ElectronicsStore.Presentation
             dgvOrder.AutoGenerateColumns = false;
             dgvOrderDetails.AutoGenerateColumns = false;
             await LoadOrdersAsync(); // Call the new async method to load orders
+            txtTotalDetails.Enabled = false;
+            txtTotalPrice.Enabled = false;
         }
 
 
@@ -248,8 +260,8 @@ namespace ElectronicsStore.Presentation
                     totalRevenue += price;
                 }
             }
-
-            txtRevenue.Text = totalRevenue.ToString("N0");
+            lblTotalPrice_Revenue.Text = "Revenue: ";
+            txtTotalPrice.Text = totalRevenue.ToString("N0");
         }
 
         private void RefreshOrderDetails()
@@ -392,7 +404,24 @@ namespace ElectronicsStore.Presentation
         {
             this.Dispose();
         }
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            // Xóa tất cả các sản phẩm đã thêm vào giỏ hàng
+            orderDetails.Clear();
+            RefreshOrderDetails();
 
+            // Reset currentOrderID về 0 để chuẩn bị cho đơn hàng mới
+            currentOrderID = 0;
+
+            // Bỏ chọn tất cả các dòng trong dgvOrder
+            if (dgvOrder.CurrentRow != null)
+            {
+                dgvOrder.CurrentRow.Selected = false;
+                dgvOrder.CurrentCell = null; // Bỏ chọn ô hiện tại
+            }
+        }
+
+        /*
         private async void btnOrder_Click(object sender, EventArgs e)
         {
             if (orderDetails == null || !orderDetails.Any())
@@ -475,8 +504,101 @@ namespace ElectronicsStore.Presentation
             {
                 MessageBox.Show($"An error occurred during the order process: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
+        }*/
 
+        private async void btnOrder_Click(object sender, EventArgs e)
+        {
+            if (orderDetails == null || !orderDetails.Any())
+            {
+                MessageBox.Show("Please add products to the order first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int orderIdToConfirm = 0;
+            bool isUpdate = false;
+
+            // Bước 1: Xác định OrderID cần xử lý (tạo mới hay cập nhật)
+            if (dgvOrder.CurrentRow != null && dgvOrder.CurrentRow.DataBoundItem is OrderDTO selectedOrder)
+            {
+                isUpdate = true;
+                orderIdToConfirm = selectedOrder.ID;
+
+            }
+
+            try
+            {
+                var orderWithDetails = new OrderWithDetailsDTO
+                {
+                    Order = new OrderDTO { ID = orderIdToConfirm, Status = "Pending" },
+                    OrderDetails = orderDetails.ToList()
+                };
+
+
+                if (!isUpdate)
+                {                    
+                    orderIdToConfirm = await _clientService.CreateTmpOrderAsync(orderWithDetails);
+                }
+
+                if (orderIdToConfirm <= 0)
+                {
+                    MessageBox.Show("Failed to create or update order. Aborting.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Bước 2: Mở frmConfirm để lấy thông tin khách hàng và nhân viên
+                using (frmConfirm confirm = new frmConfirm(_clientService,UserID,orderIdToConfirm)) // Lỗi này đã được khắc phục trong yêu cầu trước
+                {
+                    if (confirm.ShowDialog() == DialogResult.OK)
+                    {
+                        // Bước 3: Xác nhận đơn hàng với đầy đủ thông tin
+                        var confirmOrderDto = new ConfirmOrderDTO
+                        {
+                            OrderID = orderIdToConfirm,
+                            CustomerID = confirm.CustomerID,
+                            EmployeeID = confirm.UserID,
+                            Note = confirm.Note,
+                            PrintInvoice = confirm.PrintInvoice
+                        };
+                        // Sau khi frmConfirm thành công, gọi API ConfirmOrder để cập nhật toàn bộ thông tin
+                        bool confirmationResult = await _clientService.ConfirmOrderAsync(confirmOrderDto);
+
+                        if (confirmationResult)
+                        {
+                            MessageBox.Show("Order confirmed successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            if (confirm.PrintInvoice)
+                            {
+                                frmPrintOrder report = new frmPrintOrder(orderIdToConfirm, _clientService);
+                                report.ShowDialog();
+                            }
+
+                            // Reset trạng thái của frmSale và tải lại danh sách
+                            orderDetails.Clear();
+                            RefreshOrderDetails();
+                            currentOrderID = 0;
+                            await LoadOrdersAsync();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Order confirmation failed. Please try again.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    else // Nếu người dùng đóng frmConfirm mà không xác nhận
+                    {
+                        // Xóa đơn hàng tạm thời nếu nó vừa được tạo.
+                        if (!isUpdate)
+                        {
+                            await _clientService.DeleteOrderAsync(orderIdToConfirm);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during the order process: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Có thể cần thêm logic xóa đơn hàng tạm nếu lỗi xảy ra sau khi tạo nhưng trước khi xác nhận
+            }
+        }
         private async void btnFilter_Click(object sender, EventArgs e)
         {
             try
@@ -495,10 +617,6 @@ namespace ElectronicsStore.Presentation
             }
         }
 
-        private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
-        {
-            // This event handler seems to be empty. No changes needed.
-        }
 
         private async void dgvOrder_SelectionChanged(object sender, EventArgs e) // Made async
         {
@@ -511,6 +629,28 @@ namespace ElectronicsStore.Presentation
             }
         }
 
+        private async void dgvOrder_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+            if (e.RowIndex >= 0 && e.ColumnIndex == dgvOrder.Columns["ViewDetails"].Index)
+            {
+                int orderId = Convert.ToInt32(dgvOrder.Rows[e.RowIndex].Cells["OrderID"].Value);
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId))
+                {
+                    orderDetails.ShowDialog();
+                }
+            }
+            else
+            {
+                int selectedOrderId = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderID"].Value);
+                await LoadOrderDetailsAsync(selectedOrderId); // Await the async method
+                lblTotalPrice_Revenue.Text = "Total Price: ";
+                txtTotalPrice.Text = dgvOrder.Rows[e.RowIndex].Cells["TotalPrice"].Value.ToString();
+            }
+
+        }
+
+
         private async Task LoadOrderDetailsAsync(int orderId) // Changed to async Task
         {
             try
@@ -519,6 +659,7 @@ namespace ElectronicsStore.Presentation
                 if (details != null)
                 {
                     orderDetails = details;
+                    dgvOrderDetails.DataSource = details;
                     RefreshOrderDetails();
                 }
                 else
@@ -545,27 +686,12 @@ namespace ElectronicsStore.Presentation
             }
 
             int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderID"].Value);
-            //int id = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
 
             using (frmPrintOrder printOrder = new frmPrintOrder(id, _clientService))
             {
                 printOrder.ShowDialog();
             }
         }
-
-        private void dgvOrder_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
-            if (e.RowIndex >= 0 && e.ColumnIndex == dgvOrder.Columns["ViewDetails"].Index)
-            {
-                int orderId = Convert.ToInt32(dgvOrder.Rows[e.RowIndex].Cells["OrderID"].Value);
-                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId))
-                {
-                    orderDetails.ShowDialog();
-                }
-            }
-        }
-
-      
+     
     }
 }

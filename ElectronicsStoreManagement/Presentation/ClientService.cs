@@ -292,9 +292,9 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<object, List<OrderDTO>>("GetAllOrders", null);
         }
-        public async Task<List<OrderDTO>> GetCompletedOrdersAsync()
+        public async Task<List<OrderDTO>> GetOrdersByStatus()
         {
-            return await SendRequest<string, List<OrderDTO>>("GetOrdersByStatus", "Completed");
+            return await SendRequest<string, List<OrderDTO>>("GetOrdersByStatus", "Confirmed");
         }
         public async Task<OrderDTO> GetOrderByIdAsync(int orderId)
         {

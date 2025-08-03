@@ -28,9 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
             groupBox1 = new GroupBox();
             label7 = new Label();
             groupBox4 = new GroupBox();
@@ -60,6 +60,8 @@
             Quantity = new DataGridViewTextBoxColumn();
             TotalPrice = new DataGridViewTextBoxColumn();
             helpProvider1 = new HelpProvider();
+            label8 = new Label();
+            cboStatus = new ComboBox();
             groupBox1.SuspendLayout();
             groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numQuantity).BeginInit();
@@ -72,11 +74,13 @@
             // groupBox1
             // 
             groupBox1.BackColor = Color.SkyBlue;
+            groupBox1.Controls.Add(cboStatus);
             groupBox1.Controls.Add(label7);
             groupBox1.Controls.Add(groupBox4);
             groupBox1.Controls.Add(txtNote);
             groupBox1.Controls.Add(label6);
             groupBox1.Controls.Add(cboCustomer);
+            groupBox1.Controls.Add(label8);
             groupBox1.Controls.Add(cboEmployee);
             groupBox1.Controls.Add(label2);
             groupBox1.Controls.Add(label3);
@@ -119,7 +123,7 @@
             groupBox4.Location = new Point(3, 143);
             groupBox4.Name = "groupBox4";
             groupBox4.Size = new Size(778, 86);
-            groupBox4.TabIndex = 4;
+            groupBox4.TabIndex = 5;
             groupBox4.TabStop = false;
             groupBox4.Text = "Order Detail Information:";
             // 
@@ -214,7 +218,7 @@
             txtNote.Anchor = AnchorStyles.Top;
             txtNote.Location = new Point(103, 103);
             txtNote.Name = "txtNote";
-            txtNote.Size = new Size(669, 25);
+            txtNote.Size = new Size(281, 25);
             txtNote.TabIndex = 3;
             // 
             // label6
@@ -363,9 +367,9 @@
             // Price
             // 
             Price.DataPropertyName = "Price";
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle1.Format = "N0";
-            Price.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle4.Format = "N0";
+            Price.DefaultCellStyle = dataGridViewCellStyle4;
             Price.HeaderText = "Unit Price";
             Price.Name = "Price";
             Price.ReadOnly = true;
@@ -373,9 +377,9 @@
             // Quantity
             // 
             Quantity.DataPropertyName = "Quantity";
-            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle2.Format = "N0";
-            Quantity.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle5.Format = "N0";
+            Quantity.DefaultCellStyle = dataGridViewCellStyle5;
             Quantity.HeaderText = "Quantity";
             Quantity.Name = "Quantity";
             Quantity.ReadOnly = true;
@@ -383,14 +387,34 @@
             // TotalPrice
             // 
             TotalPrice.DataPropertyName = "TotalPrice";
-            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle3.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            dataGridViewCellStyle3.ForeColor = Color.Blue;
-            dataGridViewCellStyle3.Format = "N0";
-            TotalPrice.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle6.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle6.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle6.ForeColor = Color.Blue;
+            dataGridViewCellStyle6.Format = "N0";
+            TotalPrice.DefaultCellStyle = dataGridViewCellStyle6;
             TotalPrice.HeaderText = "TotalPrice";
             TotalPrice.Name = "TotalPrice";
             TotalPrice.ReadOnly = true;
+            // 
+            // label8
+            // 
+            label8.Anchor = AnchorStyles.Top;
+            label8.AutoSize = true;
+            label8.Location = new Point(422, 103);
+            label8.Name = "label8";
+            label8.Size = new Size(93, 17);
+            label8.TabIndex = 0;
+            label8.Text = "Order Status :";
+            // 
+            // cboStatus
+            // 
+            cboStatus.Anchor = AnchorStyles.Top;
+            cboStatus.FormattingEnabled = true;
+            cboStatus.Items.AddRange(new object[] { "Pending", "Confirmed", "Paid", "Canceled" });
+            cboStatus.Location = new Point(520, 100);
+            cboStatus.Name = "cboStatus";
+            cboStatus.Size = new Size(252, 25);
+            cboStatus.TabIndex = 4;
             // 
             // frmOrderDetails
             // 
@@ -449,5 +473,7 @@
         private DataGridViewTextBoxColumn TotalPrice;
         private Label label7;
         private HelpProvider helpProvider1;
+        private ComboBox cboStatus;
+        private Label label8;
     }
 }

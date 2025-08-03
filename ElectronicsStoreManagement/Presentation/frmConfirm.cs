@@ -1,4 +1,5 @@
-﻿using ElectronicsStore.Client; // Assuming ClientService is in this namespace
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using ElectronicsStore.Client; // Assuming ClientService is in this namespace
 using ElectronicsStore.DataTransferObject; // Make sure your DTOs are here
 using Newtonsoft.Json; // For JSON serialization/deserialization
 using System;
@@ -23,17 +24,28 @@ namespace ElectronicsStore.Presentation
 
         public int OrderID { get; private set; }
         public int CustomerID { get; private set; }
-        public int EmployeeID { get; private set; }
+        public int UserID { get; private set; }
         public string Note { get; private set; }
         public bool PrintInvoice { get; private set; }
         public string CustomerName { get; private set; }
-        public frmConfirm(ClientService clientService, int orderID = 0) // Inject ClientService
+
+        public frmConfirm(ClientService clientService, int orderID) // Inject ClientService
         {
             _clientService = clientService;
             InitializeComponent();
             OrderID = orderID;
+        }
+
+        public frmConfirm(ClientService clientService, int userID, int orderID) // Inject ClientService
+        {
+            _clientService = clientService;
+            InitializeComponent();
+            OrderID = orderID;
+            UserID = userID; // Assuming userID is an integer, convert it to uint if needed
 
         }
+
+       
 
         public async Task LoadDataAsync()
         {
@@ -84,11 +96,21 @@ namespace ElectronicsStore.Presentation
         {
             await LoadDataAsync(); // Load data asynchronously
             EnableControls(false); // Initially disable controls until an action is chosen (Add/Update customer for the order)
-            cboCustomer.SelectedIndex = -1;
-            cboEmployee.SelectedIndex = -1;
+
+            OrderDTO order = await _clientService.GetOrderByIdAsync(OrderID);
+            cboCustomer.SelectedValue = order?.CustomerID;// ?? string.Empty;
+            cboCustomer.Text = order?.CustomerName;// ?? string.Empty;
+
+            cboEmployee.SelectedValue = order?.EmployeeID; // Assuming EmployeeID is an integer
+            cboEmployee.Text = order?.EmployeeName;// ?? string.Empty;
+
+            txtNote.Text = order?.Note ?? string.Empty;
+            txtCustomerAddress.Text = order?.CustomerAddress ?? string.Empty;
+            txtCustomerPhone.Text = order?.CustomerPhone ?? string.Empty;
+
         }
 
-        
+
         private async void btnConfirm_Click(object sender, EventArgs e)
         {
             // Bước 1: Validate đầu vào
@@ -150,7 +172,7 @@ namespace ElectronicsStore.Presentation
                 }
 
                 // Bước 3: Gán các giá trị và đóng form
-                EmployeeID = (int)cboEmployee.SelectedValue;
+                UserID = (int)cboEmployee.SelectedValue;
                 Note = txtNote.Text.Trim();
                 PrintInvoice = chkPrintInvoice.Checked;
                 this.DialogResult = DialogResult.OK;
@@ -167,20 +189,18 @@ namespace ElectronicsStore.Presentation
             EnableControls(true);
             cboCustomer.SelectedIndex = -1;
             cboCustomer.Text = "";
-            txtNote.Clear();
-            txtCustomerEmail.Clear();
-            txtCustomerPhone.Clear();
-            txtCustomerAddress.Clear();
+           
             cboCustomer.Focus();
         }
 
         private async void btnUpdate_Click(object sender, EventArgs e)
         {
+
             // Kiểm tra xem đã có khách hàng được chọn chưa
             if (cboCustomer.SelectedValue == null)
             {
                 MessageBox.Show("Please select a customer to update.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
+                _selectedCustomerId = 1;
             }
 
             _selectedCustomerId = Convert.ToInt32(cboCustomer.SelectedValue);
@@ -233,7 +253,7 @@ namespace ElectronicsStore.Presentation
         }
 
 
-        private async Task LoadCustomerDetails(int customerId)  
+        private async Task LoadCustomerDetails(int customerId)
         {
             try
             {
@@ -261,6 +281,11 @@ namespace ElectronicsStore.Presentation
                 txtCustomerPhone.Clear();
                 txtCustomerEmail.Clear();
             }
+        }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -16,25 +16,25 @@ namespace ElectronicsStore.Presentation
         public Flash()
         {
             InitializeComponent();
-            // Tạo và cấu hình Timer
-            timer.Interval = 100; // 100ms mỗi tick, tức là 3s = 30 tick
+            // Tạo và cấu hình Timer  1s = 1000ms, 3s = 3000ms
+            timer.Interval = 1000; 
             timer.Tick += timer_Tick;
 
             // Cấu hình ProgressBar
             progressBar.Minimum = 0;
-            progressBar.Maximum = 30;
+            progressBar.Maximum = 10;
             progressBar.Value = 0;
         }
 
         private void Flash_Load(object sender, EventArgs e)
         {
-            timer.Interval = 3; // Mở form trong 3 giây
+            timer.Interval = 3000; // Mở form trong 3 giây
             timer.Start();
         }
 
         private void timer_Tick(object sender, EventArgs e)
         {
-            timer.Interval = 3000; // Mở form trong 3 giây
+            timer.Interval = 1000; // Mở form trong 3 giây   
             timer.Start();
 
             progressValue++;

@@ -28,11 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
-            DataGridViewCellStyle dataGridViewCellStyle6 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle7 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle8 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle9 = new DataGridViewCellStyle();
-            DataGridViewCellStyle dataGridViewCellStyle10 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle4 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle5 = new DataGridViewCellStyle();
             panel1 = new Panel();
             tabControl1 = new TabControl();
             tabOrderDetails = new TabPage();
@@ -48,12 +48,12 @@
             Quantity = new ColumnHeader();
             Price = new ColumnHeader();
             panel4 = new Panel();
+            btnClear = new Button();
             btnOrder = new Button();
             txtTotalDetails = new TextBox();
             label2 = new Label();
             tabPage2 = new TabPage();
             panel6 = new Panel();
-            btnPrint = new Button();
             dgvOrder = new DataGridView();
             OrderID = new DataGridViewTextBoxColumn();
             EmployeeName = new DataGridViewTextBoxColumn();
@@ -62,12 +62,13 @@
             TotalPrice = new DataGridViewTextBoxColumn();
             ViewDetails = new DataGridViewLinkColumn();
             panel5 = new Panel();
+            btnPrint = new Button();
             btnPay = new Button();
             btnFilter = new Button();
             dtpEnd = new DateTimePicker();
             dtpStart = new DateTimePicker();
-            txtRevenue = new TextBox();
-            label3 = new Label();
+            txtTotalPrice = new TextBox();
+            lblTotalPrice_Revenue = new Label();
             label4 = new Label();
             label1 = new Label();
             panel2 = new Panel();
@@ -166,9 +167,9 @@
             // dataGridViewTextBoxColumn3
             // 
             dataGridViewTextBoxColumn3.DataPropertyName = "Price";
-            dataGridViewCellStyle6.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle6.Format = "N0";
-            dataGridViewTextBoxColumn3.DefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle1.Format = "N0";
+            dataGridViewTextBoxColumn3.DefaultCellStyle = dataGridViewCellStyle1;
             dataGridViewTextBoxColumn3.HeaderText = "Unit Price";
             dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
             dataGridViewTextBoxColumn3.ReadOnly = true;
@@ -176,9 +177,9 @@
             // dataGridViewTextBoxColumn4
             // 
             dataGridViewTextBoxColumn4.DataPropertyName = "Quantity";
-            dataGridViewCellStyle7.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle7.Format = "N0";
-            dataGridViewTextBoxColumn4.DefaultCellStyle = dataGridViewCellStyle7;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle2.Format = "N0";
+            dataGridViewTextBoxColumn4.DefaultCellStyle = dataGridViewCellStyle2;
             dataGridViewTextBoxColumn4.HeaderText = "Quantity";
             dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
             dataGridViewTextBoxColumn4.ReadOnly = true;
@@ -186,11 +187,11 @@
             // dataGridViewTextBoxColumn5
             // 
             dataGridViewTextBoxColumn5.DataPropertyName = "TotalPrice";
-            dataGridViewCellStyle8.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle8.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            dataGridViewCellStyle8.ForeColor = Color.Blue;
-            dataGridViewCellStyle8.Format = "N0";
-            dataGridViewTextBoxColumn5.DefaultCellStyle = dataGridViewCellStyle8;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle3.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle3.ForeColor = Color.Blue;
+            dataGridViewCellStyle3.Format = "N0";
+            dataGridViewTextBoxColumn5.DefaultCellStyle = dataGridViewCellStyle3;
             dataGridViewTextBoxColumn5.HeaderText = "Sub Total";
             dataGridViewTextBoxColumn5.Name = "dataGridViewTextBoxColumn5";
             dataGridViewTextBoxColumn5.ReadOnly = true;
@@ -230,6 +231,7 @@
             // panel4
             // 
             panel4.BackColor = Color.SteelBlue;
+            panel4.Controls.Add(btnClear);
             panel4.Controls.Add(btnOrder);
             panel4.Controls.Add(txtTotalDetails);
             panel4.Controls.Add(label2);
@@ -239,12 +241,25 @@
             panel4.Size = new Size(436, 70);
             panel4.TabIndex = 0;
             // 
+            // btnClear
+            // 
+            btnClear.Anchor = AnchorStyles.Top;
+            btnClear.BackColor = Color.DarkTurquoise;
+            btnClear.ForeColor = Color.MidnightBlue;
+            btnClear.Location = new Point(350, 16);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(86, 36);
+            btnClear.TabIndex = 9;
+            btnClear.Text = "Clear";
+            btnClear.UseVisualStyleBackColor = false;
+            btnClear.Click += btnClear_Click;
+            // 
             // btnOrder
             // 
             btnOrder.Anchor = AnchorStyles.Top;
             btnOrder.BackColor = Color.Navy;
             btnOrder.ForeColor = Color.AliceBlue;
-            btnOrder.Location = new Point(331, 16);
+            btnOrder.Location = new Point(263, 16);
             btnOrder.Name = "btnOrder";
             btnOrder.Size = new Size(86, 36);
             btnOrder.TabIndex = 9;
@@ -257,9 +272,9 @@
             txtTotalDetails.Anchor = AnchorStyles.Top;
             txtTotalDetails.BackColor = Color.LightCyan;
             txtTotalDetails.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
-            txtTotalDetails.Location = new Point(110, 23);
+            txtTotalDetails.Location = new Point(86, 23);
             txtTotalDetails.Name = "txtTotalDetails";
-            txtTotalDetails.Size = new Size(215, 25);
+            txtTotalDetails.Size = new Size(171, 25);
             txtTotalDetails.TabIndex = 8;
             // 
             // label2
@@ -267,7 +282,7 @@
             label2.AutoSize = true;
             label2.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
             label2.ForeColor = Color.AliceBlue;
-            label2.Location = new Point(27, 26);
+            label2.Location = new Point(3, 26);
             label2.Name = "label2";
             label2.Size = new Size(77, 17);
             label2.TabIndex = 7;
@@ -294,19 +309,6 @@
             panel6.Name = "panel6";
             panel6.Size = new Size(436, 345);
             panel6.TabIndex = 9;
-            // 
-            // btnPrint
-            // 
-            btnPrint.Anchor = AnchorStyles.Top;
-            btnPrint.BackColor = Color.Navy;
-            btnPrint.ForeColor = Color.AliceBlue;
-            btnPrint.Location = new Point(347, 41);
-            btnPrint.Name = "btnPrint";
-            btnPrint.Size = new Size(86, 36);
-            btnPrint.TabIndex = 14;
-            btnPrint.Text = "Print";
-            btnPrint.UseVisualStyleBackColor = false;
-            btnPrint.Click += btnPrint_Click;
             // 
             // dgvOrder
             // 
@@ -351,10 +353,10 @@
             // Date
             // 
             Date.DataPropertyName = "Date";
-            dataGridViewCellStyle9.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle9.Format = "dd/MM/yyyy";
-            dataGridViewCellStyle9.NullValue = "dd/MM/yyyy";
-            Date.DefaultCellStyle = dataGridViewCellStyle9;
+            dataGridViewCellStyle4.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.Format = "dd/MM/yyyy";
+            dataGridViewCellStyle4.NullValue = "dd/MM/yyyy";
+            Date.DefaultCellStyle = dataGridViewCellStyle4;
             Date.HeaderText = "Create Date";
             Date.Name = "Date";
             Date.ReadOnly = true;
@@ -362,11 +364,11 @@
             // TotalPrice
             // 
             TotalPrice.DataPropertyName = "TotalPrice";
-            dataGridViewCellStyle10.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dataGridViewCellStyle10.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            dataGridViewCellStyle10.ForeColor = Color.Blue;
-            dataGridViewCellStyle10.Format = "N0";
-            TotalPrice.DefaultCellStyle = dataGridViewCellStyle10;
+            dataGridViewCellStyle5.Alignment = DataGridViewContentAlignment.MiddleRight;
+            dataGridViewCellStyle5.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle5.ForeColor = Color.Blue;
+            dataGridViewCellStyle5.Format = "N0";
+            TotalPrice.DefaultCellStyle = dataGridViewCellStyle5;
             TotalPrice.HeaderText = "Total Price";
             TotalPrice.Name = "TotalPrice";
             TotalPrice.ReadOnly = true;
@@ -388,8 +390,8 @@
             panel5.Controls.Add(btnFilter);
             panel5.Controls.Add(dtpEnd);
             panel5.Controls.Add(dtpStart);
-            panel5.Controls.Add(txtRevenue);
-            panel5.Controls.Add(label3);
+            panel5.Controls.Add(txtTotalPrice);
+            panel5.Controls.Add(lblTotalPrice_Revenue);
             panel5.Controls.Add(label4);
             panel5.Controls.Add(label1);
             panel5.Dock = DockStyle.Bottom;
@@ -397,6 +399,19 @@
             panel5.Name = "panel5";
             panel5.Size = new Size(436, 80);
             panel5.TabIndex = 7;
+            // 
+            // btnPrint
+            // 
+            btnPrint.Anchor = AnchorStyles.Top;
+            btnPrint.BackColor = Color.Navy;
+            btnPrint.ForeColor = Color.AliceBlue;
+            btnPrint.Location = new Point(347, 41);
+            btnPrint.Name = "btnPrint";
+            btnPrint.Size = new Size(86, 36);
+            btnPrint.TabIndex = 14;
+            btnPrint.Text = "Print";
+            btnPrint.UseVisualStyleBackColor = false;
+            btnPrint.Click += btnPrint_Click;
             // 
             // btnPay
             // 
@@ -452,27 +467,27 @@
             dtpStart.TabIndex = 12;
             dtpStart.Value = new DateTime(2025, 5, 25, 23, 59, 59, 0);
             // 
-            // txtRevenue
+            // txtTotalPrice
             // 
-            txtRevenue.Anchor = AnchorStyles.Top;
-            txtRevenue.BackColor = Color.LightCyan;
-            txtRevenue.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
-            txtRevenue.Location = new Point(77, 48);
-            txtRevenue.Name = "txtRevenue";
-            txtRevenue.Size = new Size(172, 25);
-            txtRevenue.TabIndex = 10;
+            txtTotalPrice.Anchor = AnchorStyles.Top;
+            txtTotalPrice.BackColor = Color.LightCyan;
+            txtTotalPrice.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
+            txtTotalPrice.Location = new Point(90, 48);
+            txtTotalPrice.Name = "txtTotalPrice";
+            txtTotalPrice.Size = new Size(159, 25);
+            txtTotalPrice.TabIndex = 10;
             // 
-            // label3
+            // lblTotalPrice_Revenue
             // 
-            label3.AutoSize = true;
-            label3.BackColor = Color.SteelBlue;
-            label3.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
-            label3.ForeColor = Color.AliceBlue;
-            label3.Location = new Point(7, 51);
-            label3.Name = "label3";
-            label3.Size = new Size(64, 17);
-            label3.TabIndex = 9;
-            label3.Text = "Revenue:";
+            lblTotalPrice_Revenue.AutoSize = true;
+            lblTotalPrice_Revenue.BackColor = Color.SteelBlue;
+            lblTotalPrice_Revenue.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
+            lblTotalPrice_Revenue.ForeColor = Color.AliceBlue;
+            lblTotalPrice_Revenue.Location = new Point(7, 51);
+            lblTotalPrice_Revenue.Name = "lblTotalPrice_Revenue";
+            lblTotalPrice_Revenue.Size = new Size(64, 17);
+            lblTotalPrice_Revenue.TabIndex = 9;
+            lblTotalPrice_Revenue.Text = "Revenue:";
             // 
             // label4
             // 
@@ -543,6 +558,7 @@
             btnFind.AutoEllipsis = true;
             btnFind.BackColor = Color.LightSkyBlue;
             btnFind.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnFind.ForeColor = Color.MidnightBlue;
             btnFind.Location = new Point(474, 7);
             btnFind.Name = "btnFind";
             btnFind.Size = new Size(80, 40);
@@ -556,6 +572,7 @@
             btnCancel.Anchor = AnchorStyles.Top;
             btnCancel.BackColor = Color.DarkTurquoise;
             btnCancel.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
+            btnCancel.ForeColor = Color.MidnightBlue;
             btnCancel.Location = new Point(356, 53);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(80, 40);
@@ -569,6 +586,7 @@
             btnClose.Anchor = AnchorStyles.Top;
             btnClose.BackColor = Color.Turquoise;
             btnClose.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
+            btnClose.ForeColor = Color.MidnightBlue;
             btnClose.Location = new Point(474, 53);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(80, 40);
@@ -636,13 +654,13 @@
             flowLayoutPanel1.AutoScroll = true;
             flowLayoutPanel1.BackColor = Color.SkyBlue;
             flowLayoutPanel1.Dock = DockStyle.Fill;
+            flowLayoutPanel1.ForeColor = Color.MidnightBlue;
             flowLayoutPanel1.Location = new Point(0, 0);
             flowLayoutPanel1.Margin = new Padding(10, 3, 3, 10);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
             flowLayoutPanel1.Padding = new Padding(0, 0, 0, 10);
             flowLayoutPanel1.Size = new Size(644, 361);
             flowLayoutPanel1.TabIndex = 0;
-            flowLayoutPanel1.Paint += flowLayoutPanel1_Paint;
             // 
             // frmSale
             // 
@@ -712,8 +730,8 @@
         private DataGridViewTextBoxColumn dataGridViewTextBoxColumn4;
         private DataGridViewTextBoxColumn dataGridViewTextBoxColumn5;
         private Label label1;
-        private TextBox txtRevenue;
-        private Label label3;
+        private TextBox txtTotalPrice;
+        private Label lblTotalPrice_Revenue;
         private DateTimePicker dtpStart;
         private Button btnFilter;
         private Button btnOrder;
@@ -731,5 +749,6 @@
         private DataGridViewTextBoxColumn TotalPrice;
         private DataGridViewLinkColumn ViewDetails;
         private Button btnPay;
+        private Button btnClear;
     }
 }
