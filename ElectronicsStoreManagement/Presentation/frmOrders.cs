@@ -18,26 +18,36 @@ namespace ElectronicsStore.Presentation
     {
         private int id;
 
+        private int EmployeeID {get; set; } // Assuming you might need this for some operations
+
         BindingSource binding = new BindingSource();
         private readonly ClientService _clientService;
         // Khởi tạo ClientService ngay trong constructor của frmMain
         string serverIp = ConfigurationManager.AppSettings["ServerIp"] ?? "127.0.0.1"; // Default to localhost if not found
         int port = int.Parse(ConfigurationManager.AppSettings["ServerPort"] ?? "301"); // Default port
 
-        public frmOrders(ClientService clientService)
+        /*public frmOrders(ClientService clientService)
         {
              _clientService = clientService;
              InitializeComponent();
              string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
              helpProvider1.HelpNamespace = helpURL + "orders.html";
-         }
-         public frmOrders()
+        }*/
+        public frmOrders(ClientService clientService, int userID)
+        {
+            _clientService = clientService;
+            InitializeComponent();
+            EmployeeID = userID; // Assuming you want to use this userID for some operations
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "orders.html";
+        }
+        /*public frmOrders()
          {
              _clientService = new ClientService("127.0.0.1", 301);
              InitializeComponent();
              string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
              helpProvider1.HelpNamespace = helpURL + "orders.html";
-        }
+        }*/
 
         private void SetupToolStrip()
         {
@@ -214,7 +224,7 @@ namespace ElectronicsStore.Presentation
 
         private async void btnCreate_Click(object sender, EventArgs e)
         {
-             using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, 0))
+             using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService,0,EmployeeID))
              {
                  if (orderDetails.ShowDialog() == DialogResult.OK)
                  {
@@ -229,7 +239,7 @@ namespace ElectronicsStore.Presentation
              if (dataGridView.CurrentRow != null)
              {
                  id = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value);
-                 using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, id))
+                 using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, id, EmployeeID))
                  {
                      if (orderDetails.ShowDialog() == DialogResult.OK)
                      {
@@ -428,7 +438,7 @@ namespace ElectronicsStore.Presentation
             if (e.RowIndex >= 0 && e.ColumnIndex == dataGridView.Columns["ViewDetails"].Index)
             {
                 int orderId = Convert.ToInt32(dataGridView.Rows[e.RowIndex].Cells["ID"].Value);
-                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId))
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId, EmployeeID))
                 {
                     orderDetails.ShowDialog();
                 }

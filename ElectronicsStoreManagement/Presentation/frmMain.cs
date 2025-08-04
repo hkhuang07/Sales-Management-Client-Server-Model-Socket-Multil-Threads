@@ -249,7 +249,7 @@ namespace ElectronicsStore.Presentation
         {
             if (orders == null || orders.IsDisposed)
             {
-                orders = new frmOrders(_clientService);
+                orders = new frmOrders(_clientService,userID);
                 orders.MdiParent = this;
                 orders.Show();
             }
@@ -361,12 +361,13 @@ namespace ElectronicsStore.Presentation
                 if (logIn.ShowDialog() == DialogResult.OK)
                 {
                     // Lấy thông tin đã đăng nhập từ public property LoggedInUser của frmLogin
-                    var loginResponse = logIn.LoggedInUser; // <<< KHÔNG THAY ĐỔI, ĐÃ ĐÚNG
+                    var loginResponse = logIn.LoggedInUser; 
 
                     if (loginResponse != null)
                     {
                         employeeName = loginResponse.FullName;
-                        userID = loginResponse.UserId;
+                        var user = _clientService.GetEmployeeByNameAsync(loginResponse.FullName); // Assuming GetUserById fetches user details by ID
+                        userID = user.Id;
                         currentEmployeeRole = loginResponse.Roles;
 
                         isAuthenticated = true;

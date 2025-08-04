@@ -253,6 +253,15 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<object, List<EmployeeDTO>>("GetAllEmployees", null);
         }
+        public async Task<EmployeeDTO> GetEmployeeByIdAsync(int employeeId)
+        {
+            return await SendRequest<int, EmployeeDTO>("GetEmployeeById", employeeId);
+        }
+        public async Task<EmployeeDTO> GetEmployeeByNameAsync(string employeeName)
+        {
+            return await SendRequest<string, EmployeeDTO>("GetEmployeeByName", employeeName);
+        }
+
         public async Task<LoginResponseDTO> Authenticate(LoginRequestDTO loginRequest)
         {
             return await SendRequest<LoginRequestDTO, LoginResponseDTO>("Authenticate", loginRequest);

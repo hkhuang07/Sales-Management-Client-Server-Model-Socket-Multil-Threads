@@ -61,7 +61,7 @@ namespace ElectronicsStore.BusinessLogic
                 
             CreateMap<OrderDetailsList, Order_Details>();
 
-           CreateMap<Employees, LoginResponseDTO>()
+            CreateMap<Employees, LoginResponseDTO>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.ID))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
@@ -70,6 +70,11 @@ namespace ElectronicsStore.BusinessLogic
             CreateMap<Employees, LoginRequestDTO>()
                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.UserName))
                .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.Password));
+
+            CreateMap<Employees, ChangePasswordRequestDTO>()
+               .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.ID))
+               .ForMember(dest => dest.OldPassword, opt => opt.MapFrom(src => src.Password))
+               .ForMember(dest => dest.NewPassword , opt => opt.MapFrom(src => src.Password));
         }
 
     }

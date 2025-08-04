@@ -546,7 +546,7 @@ namespace ElectronicsStore.Presentation
                 }
 
                 // Bước 2: Mở frmConfirm để lấy thông tin khách hàng và nhân viên
-                using (frmConfirm confirm = new frmConfirm(_clientService,UserID,orderIdToConfirm)) // Lỗi này đã được khắc phục trong yêu cầu trước
+                using (frmConfirm confirm = new frmConfirm(_clientService,orderIdToConfirm, UserID)) // Lỗi này đã được khắc phục trong yêu cầu trước
                 {
                     if (confirm.ShowDialog() == DialogResult.OK)
                     {
@@ -555,7 +555,7 @@ namespace ElectronicsStore.Presentation
                         {
                             OrderID = orderIdToConfirm,
                             CustomerID = confirm.CustomerID,
-                            EmployeeID = confirm.UserID,
+                            EmployeeID = confirm.EmployeeID,
                             Note = confirm.Note,
                             PrintInvoice = confirm.PrintInvoice
                         };
@@ -635,7 +635,7 @@ namespace ElectronicsStore.Presentation
             if (e.RowIndex >= 0 && e.ColumnIndex == dgvOrder.Columns["ViewDetails"].Index)
             {
                 int orderId = Convert.ToInt32(dgvOrder.Rows[e.RowIndex].Cells["OrderID"].Value);
-                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId))
+                using (frmOrderDetails orderDetails = new frmOrderDetails(_clientService, orderId, UserID))
                 {
                     orderDetails.ShowDialog();
                 }

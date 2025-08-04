@@ -102,6 +102,13 @@ namespace ElectronicsStore.BusinessLogic
             return _mapper.Map<List<EmployeeDTO>>(list);
 
         }
+        public EmployeeDTO GetByName(string name)
+        {
+            var employee = _repository.GetAll().FirstOrDefault(e => e.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (employee == null) 
+                return null;
+            return _mapper.Map<EmployeeDTO>(employee);
+        }
 
         public EmployeeDTO? GetByUserName(string userName)
         {
@@ -179,6 +186,30 @@ namespace ElectronicsStore.BusinessLogic
 
             _repository.Delete(entity);
             _unitOfWork.SaveChanges();
+        }
+        public bool ChangePassword(int id, string oldPassword, string newPassword)
+        {
+            var entity = _repository.GetById(id);
+            if (entity == null)
+            {
+                // Sử dụng một ngoại lệ tùy chỉnh hoặc trả về false
+                // Tùy thuộc vào cách bạn muốn xử lý trên server
+                throw new Exception($"Employee not found with ID = {id}.");
+            }
+
+            // Xác minh mật khẩu cũ.
+            // Giả sử BCrypt.Net được sử dụng.
+            if (!BCrypt.Net.BCrypt.Verify(oldPassword, entity.Password))
+            {
+                return false; // Mật khẩu cũ không chính xác
+            }
+
+            // Cập nhật mật khẩu mới
+            entity.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            _repository.Update(entity);
+            _unitOfWork.SaveChanges();
+
+            return true; // Đổi mật khẩu thành công
         }
 
         //Các Hàm mới

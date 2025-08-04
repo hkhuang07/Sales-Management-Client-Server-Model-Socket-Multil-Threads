@@ -1,11 +1,11 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
-using ElectronicsStore.Client; // Assuming ClientService is in this namespace
-using ElectronicsStore.DataTransferObject; // Make sure your DTOs are here
-using Newtonsoft.Json; // For JSON serialization/deserialization
+using ElectronicsStore.Client;
+using ElectronicsStore.DataTransferObject;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Configuration; // Needed for ConfigurationManager
+using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.Linq;
@@ -18,47 +18,56 @@ namespace ElectronicsStore.Presentation
 {
     public partial class frmConfirm : Form
     {
-        private readonly ClientService _clientService; // Changed from ServerClientHandler to ClientService
-        private bool _isAddingNewCustomer = true; // Renamed signAdd for clarity
-        private int _selectedCustomerId = 0; // Renamed customerID for clarity
+        private readonly ClientService _clientService;
+        private bool _isAddingNewCustomer = true;
+        private int _selectedCustomerId = 0;
 
         public int OrderID { get; private set; }
         public int CustomerID { get; private set; }
-        public int UserID { get; private set; }
+        public int EmployeeID { get; private set; }
         public string Note { get; private set; }
         public bool PrintInvoice { get; private set; }
         public string CustomerName { get; private set; }
 
-        public frmConfirm(ClientService clientService, int orderID) // Inject ClientService
+        // Sử dụng một constructor duy nhất, truyền OrderID và EmployeeID từ Main Form.
+        public frmConfirm(ClientService clientService, int orderID, int employeeID)
         {
             _clientService = clientService;
             InitializeComponent();
             OrderID = orderID;
+            EmployeeID = employeeID;
         }
 
-        public frmConfirm(ClientService clientService, int userID, int orderID) // Inject ClientService
-        {
-            _clientService = clientService;
-            InitializeComponent();
-            OrderID = orderID;
-            UserID = userID; // Assuming userID is an integer, convert it to uint if needed
-
-        }
-
-       
-
+        // Hàm này sẽ tải dữ liệu từ server và hiển thị lên các ComboBox
         public async Task LoadDataAsync()
         {
             try
             {
-                // Tải danh sách nhân viên
-                var employees = await _clientService.GetAllEmployeesAsync();
-                if (employees != null)
+                // Chỉ tải thông tin nhân viên của người dùng hiện tại
+                if (EmployeeID > 0)
                 {
-                    cboEmployee.DataSource = employees;
-                    cboEmployee.DisplayMember = "FullName";
-                    cboEmployee.ValueMember = "ID";
+                    var employee = await _clientService.GetEmployeeByIdAsync(EmployeeID);
+                    if (employee != null)
+                    {
+                        var employeeList = new List<EmployeeDTO> { employee };
+                        cboEmployee.DataSource = employeeList;
+                        cboEmployee.DisplayMember = "FullName";
+                        cboEmployee.ValueMember = "ID";
+                        cboEmployee.SelectedValue = EmployeeID;
+                    }
                 }
+                else
+                {
+                    // Nếu EmployeeID không hợp lệ, tải toàn bộ danh sách nhân viên
+                    var employees = await _clientService.GetAllEmployeesAsync();
+                    if (employees != null)
+                    {
+                        cboEmployee.DataSource = employees;
+                        cboEmployee.DisplayMember = "FullName";
+                        cboEmployee.ValueMember = "ID";
+                    }
+                }
+                cboEmployee.Enabled = false; // Luôn tắt ComboBox nhân viên
 
                 // Tải danh sách khách hàng
                 var customers = await _clientService.GetAllCustomersAsync();
@@ -77,14 +86,39 @@ namespace ElectronicsStore.Presentation
             }
         }
 
+        private async Task LoadCustomerDetails(int customerId)
+        {
+            try
+            {
+                var customer = await _clientService.GetCustomerByIdAsync(customerId);
+                if (customer != null)
+                {
+                    // Binding lại các trường textbox
+                    txtCustomerAddress.Text = customer.CustomerAddress;
+                    txtCustomerPhone.Text = customer.CustomerPhone;
+                    txtCustomerEmail.Text = customer.CustomerEmail;
+                }
+                else
+                {
+                    MessageBox.Show("Failed to load customer details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ClearCustomerFields();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error fetching customer details: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ClearCustomerFields();
+            }
+        }
+
+        // Cập nhật hàm EnableControls để phù hợp với logic mới
         public void EnableControls(bool value)
         {
             txtCustomerEmail.Enabled = value;
             txtCustomerPhone.Enabled = value;
             txtCustomerAddress.Enabled = value;
             txtNote.Enabled = value;
-            cboEmployee.Enabled = value;
-            //cboCustomer.Enabled = value; // Khi thêm mới thì không cho chọn ComboBox
+            // cboEmployee.Enabled = false; // ComboBox nhân viên luôn bị tắt
             btnConfirm.Enabled = value;
             chkPrintInvoice.Enabled = value;
 
@@ -92,35 +126,56 @@ namespace ElectronicsStore.Presentation
             btnUpdate.Enabled = !value;
         }
 
-        private async void frmConfirm_Load(object sender, EventArgs e)
+        private void ClearFields()
         {
-            await LoadDataAsync(); // Load data asynchronously
-            EnableControls(false); // Initially disable controls until an action is chosen (Add/Update customer for the order)
-
-            OrderDTO order = await _clientService.GetOrderByIdAsync(OrderID);
-            cboCustomer.SelectedValue = order?.CustomerID;// ?? string.Empty;
-            cboCustomer.Text = order?.CustomerName;// ?? string.Empty;
-
-            cboEmployee.SelectedValue = order?.EmployeeID; // Assuming EmployeeID is an integer
-            cboEmployee.Text = order?.EmployeeName;// ?? string.Empty;
-
-            txtNote.Text = order?.Note ?? string.Empty;
-            txtCustomerAddress.Text = order?.CustomerAddress ?? string.Empty;
-            txtCustomerPhone.Text = order?.CustomerPhone ?? string.Empty;
-
+            chkPrintInvoice.Checked = false;
+            txtNote.Clear();
+            ClearCustomerFields();
         }
 
+        private void ClearCustomerFields()
+        {
+            txtCustomerAddress.Clear();
+            txtCustomerPhone.Clear();
+            txtCustomerEmail.Clear();
+        }
+
+        private async void frmConfirm_Load(object sender, EventArgs e)
+        {
+            await LoadDataAsync();
+
+            // Phân biệt chế độ ADD và UPDATE
+            if (OrderID <= 0) // Đây là đơn hàng mới (ADD)
+            {
+                _isAddingNewCustomer = true;
+                EnableControls(true);
+                cboCustomer.SelectedIndex = -1; // ComboBox khách hàng rỗng
+                cboCustomer.Text = "";
+                cboCustomer.Enabled = true;
+            }
+            else // Đây là đơn hàng cũ (UPDATE)
+            {
+                _isAddingNewCustomer = false;
+                EnableControls(false); // Ban đầu vô hiệu hóa các trường
+                var order = await _clientService.GetOrderByIdAsync(OrderID);
+                if (order != null)
+                {
+                    // Load thông tin khách hàng và nhân viên
+                    cboCustomer.SelectedValue = order.CustomerID;
+                    txtNote.Text = order.Note;
+                    await LoadCustomerDetails(order.CustomerID);
+                }
+            }
+        }
 
         private async void btnConfirm_Click(object sender, EventArgs e)
         {
-            // Bước 1: Validate đầu vào
             if (string.IsNullOrEmpty(cboCustomer.Text.Trim()) || cboEmployee.SelectedValue == null)
             {
                 MessageBox.Show("Please enter customer name and select an employee.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Bước 2: Xử lý thông tin khách hàng (Thêm mới hoặc Cập nhật)
             try
             {
                 var customerDto = new CustomerDTO
@@ -131,11 +186,10 @@ namespace ElectronicsStore.Presentation
                     CustomerEmail = txtCustomerEmail.Text.Trim()
                 };
 
+                // Logic xử lý khách hàng đã được tách ra rõ ràng
                 if (_isAddingNewCustomer)
                 {
                     var addedCustomer = await _clientService.AddCustomerAsync(customerDto);
-                    // Kiểm tra kết quả trả về từ server.
-                    // Nếu thành công, addedCustomer sẽ chứa đối tượng với ID mới.
                     if (addedCustomer != null && addedCustomer.ID > 0)
                     {
                         CustomerID = addedCustomer.ID;
@@ -147,32 +201,32 @@ namespace ElectronicsStore.Presentation
                         return;
                     }
                 }
-                else // _isUpdatingCustomer
+                else // Đơn hàng cũ, cập nhật thông tin khách hàng nếu cần
                 {
-                    if (cboCustomer.SelectedValue == null)
+                    if (cboCustomer.SelectedValue != null)
+                    {
+                        customerDto.ID = Convert.ToInt32(cboCustomer.SelectedValue);
+                        bool updated = await _clientService.UpdateCustomerAsync(customerDto);
+                        if (updated)
+                        {
+                            CustomerID = customerDto.ID;
+                            CustomerName = customerDto.CustomerName;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Failed to update customer information. Order confirmation aborted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+                    }
+                    else
                     {
                         MessageBox.Show("Please select a customer to update.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
-
-                    customerDto.ID = Convert.ToInt32(cboCustomer.SelectedValue);
-                    bool updated = await _clientService.UpdateCustomerAsync(customerDto);
-
-                    // Kiểm tra kết quả trả về từ server
-                    if (updated)
-                    {
-                        CustomerID = customerDto.ID;
-                        CustomerName = customerDto.CustomerName;
-                    }
-                    else
-                    {
-                        MessageBox.Show("Failed to update customer information. Order confirmation aborted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
                 }
 
-                // Bước 3: Gán các giá trị và đóng form
-                UserID = (int)cboEmployee.SelectedValue;
+                // Gán các giá trị và đóng form
+                EmployeeID = (int)cboEmployee.SelectedValue;
                 Note = txtNote.Text.Trim();
                 PrintInvoice = chkPrintInvoice.Checked;
                 this.DialogResult = DialogResult.OK;
@@ -183,41 +237,32 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show($"An error occurred during confirmation: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void btnAdd_Click(object sender, EventArgs e)
         {
             _isAddingNewCustomer = true;
-            EnableControls(true);
             cboCustomer.SelectedIndex = -1;
             cboCustomer.Text = "";
-           
+            cboCustomer.Enabled = true;
+            ClearCustomerFields();
+            EnableControls(true);
             cboCustomer.Focus();
         }
 
         private async void btnUpdate_Click(object sender, EventArgs e)
         {
-
-            // Kiểm tra xem đã có khách hàng được chọn chưa
             if (cboCustomer.SelectedValue == null)
             {
                 MessageBox.Show("Please select a customer to update.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                _selectedCustomerId = 1;
-            }
-
-            _selectedCustomerId = Convert.ToInt32(cboCustomer.SelectedValue);
-            // Kiểm tra giá trị _selectedCustomerId có hợp lệ không
-            if (_selectedCustomerId <= 0)
-            {
-                MessageBox.Show("Invalid customer selected.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             _isAddingNewCustomer = false;
-            cboCustomer.Enabled = true;
+            cboCustomer.Enabled = false;
             EnableControls(true);
-
-            // Load chi tiết khách hàng đã chọn vào các textbox
-            await LoadCustomerDetails(_selectedCustomerId);
+            await LoadCustomerDetails(Convert.ToInt32(cboCustomer.SelectedValue));
         }
+
         private void btnClose_Click(object sender, EventArgs e)
         {
             this.Dispose();
@@ -225,67 +270,19 @@ namespace ElectronicsStore.Presentation
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            frmConfirm_Load(sender, e); // Reload the form to reset controls
+            frmConfirm_Load(sender, e);
         }
 
         private async void cboCustomer_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // Kiểm tra xem có mục nào được chọn không
-            if (cboCustomer.SelectedItem != null)
+            if (!_isAddingNewCustomer && cboCustomer.SelectedValue != null)
             {
-                // Lấy đối tượng CustomerDTO từ mục đã chọn
-                if (cboCustomer.SelectedItem is CustomerDTO selectedCustomer)
-                {
-                    _selectedCustomerId = selectedCustomer.ID;
-                    await LoadCustomerDetails(_selectedCustomerId);
-                }
-                else
-                {
-                    // Xử lý trường hợp không phải là CustomerDTO
-                    // Đây là trường hợp an toàn, có thể không cần thiết nếu luồng code đúng
-                    _selectedCustomerId = 0;
-                    // Clear các textbox liên quan
-                    txtCustomerAddress.Clear();
-                    txtCustomerPhone.Clear();
-                    txtCustomerEmail.Clear();
-                }
+                await LoadCustomerDetails(Convert.ToInt32(cboCustomer.SelectedValue));
             }
-        }
-
-
-        private async Task LoadCustomerDetails(int customerId)
-        {
-            try
+            else
             {
-                var customer = await _clientService.GetCustomerByIdAsync(customerId);
-                if (customer != null)
-                {
-                    txtCustomerAddress.Text = customer.CustomerAddress;
-                    txtCustomerPhone.Text = customer.CustomerPhone;
-                    txtCustomerEmail.Text = customer.CustomerEmail;
-                    txtNote.Clear();
-                    txtCustomerAddress.Focus();
-                }
-                else
-                {
-                    MessageBox.Show("Failed to load customer details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    txtCustomerAddress.Clear();
-                    txtCustomerPhone.Clear();
-                    txtCustomerEmail.Clear();
-                }
+                ClearCustomerFields();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error fetching customer details: {ex.Message}", "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtCustomerAddress.Clear();
-                txtCustomerPhone.Clear();
-                txtCustomerEmail.Clear();
-            }
-        }
-
-        private void groupBox1_Enter(object sender, EventArgs e)
-        {
-
         }
     }
 }

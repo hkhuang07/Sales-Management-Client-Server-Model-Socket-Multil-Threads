@@ -1,12 +1,7 @@
 ﻿using AutoMapper;
-using Azure;
-using Azure.Core;
 using ElectronicsStore.BusinessLogic;
-using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,110 +12,128 @@ using System.Threading.Tasks;
 
 namespace ElectronicsStore.Server
 {
-    public class ServerHandler
+    public class ServerHandler00
     {
-        public static async Task HandleClientAsync(TcpClient client, IMapper mapper, DbContextOptions<ElectronicsStoreContext> dbContextOptions)
+        private static IMapper _mapper; // Cần được khởi tạo, ví dụ trong hàm Main hoặc Startup
+
+        // Phương thức khởi tạo cho _mapper
+        public static void InitializeMapper(IMapper mapper)
         {
-            IPEndPoint remoteEndPoint = null;
-            
+            _mapper = mapper;
+        }
+
+        public static async Task HandleClientAsync(TcpClient client)
+        {
+           /* IPEndPoint remoteEndPoint = null;
             try
             {
                 remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
-                //Console.WriteLine($"Received from client {remoteEndPoint}");
-                client.SendBufferSize = 1024 * 1024;
-                client.ReceiveBufferSize = 1024 * 1024;
-                // Tạo DbContext mới cho mỗi request và đảm bảo nó được giải phóng
-                using var context = new ElectronicsStoreContext(dbContextOptions);
-                // Khởi tạo Unit of Work, truyền vào DbContext đã tạo
-                var unitOfWork = new UnitOfWork(context);
+                Console.WriteLine($"Client connected: {remoteEndPoint}");
 
-                // Khởi tạo các repository
-                var orderRepository = new OrderRepository(context);
-                var orderDetailsRepository = new OrderDetailsRepository(context);
-                var productRepository = new ProductRepository(context);
-                var categoryRepository = new CategoryRepository(context);
-                var manufacturerRepository = new ManufacturerRepository(context);
-                var employeeRepository = new EmployeeRepository(context);
-                var customerRepository = new CustomerRepository(context);
+                if (_mapper == null)
+                {
+                    throw new InvalidOperationException("IMapper has not been initialized. Call ServerHandler.InitializeMapper() first.");
+                }
 
-                // Khởi tạo các service, truyền các repository, mapper và Unit of Work
-                // Cập nhật lại các constructor của service để phù hợp
-                var categoryService = new CategoryService(categoryRepository, mapper, unitOfWork);
-                var manufacturerService = new ManufacturerService(manufacturerRepository, mapper, unitOfWork);
-                var productService = new ProductService(productRepository, mapper, unitOfWork);
-                var customerService = new CustomerService(customerRepository, mapper, unitOfWork);
-                var employeeService = new EmployeeService(employeeRepository, mapper, unitOfWork);
-                var orderService = new OrderService(orderRepository, orderDetailsRepository, mapper, unitOfWork);
-                var orderDetailsService = new OrderDetailsService(orderDetailsRepository, mapper, unitOfWork);
+                // Khởi tạo các service
+                var productService = new ProductService(_mapper);
+                var categoryService = new CategoryService(_mapper);
+                var manufacturerService = new ManufacturerService(_mapper);
+                var employeeService = new EmployeeService(_mapper);
+                var customerService = new CustomerService(_mapper);
+                var orderService = new OrderService(_mapper);
+                var orderDetailsService = new OrderDetailsService(_mapper);
 
                 NetworkStream stream = client.GetStream();
+
+                // Buffer để đọc độ dài (4 bytes)
                 byte[] lengthBuffer = new byte[4];
 
-                while (true)
+                while (true) // Vòng lặp liên tục để nhận và xử lý request
                 {
                     ClientRequestBase requestBase = null;
-                    ServerResponseBase responseBase = new ServerResponseBase { Success = false, Message = "Unknown action or server error." };
+                    ServerResponseBase responseBase = new ServerResponseBase { Success = false, Message = "Unknown action or server error." }; // Khởi tạo response mặc định
                     string requestJson = null;
-
                     try
                     {
+                        // 1. Đọc 4 bytes độ dài của request JSON
                         int bytesReadLength = await stream.ReadAsync(lengthBuffer, 0, lengthBuffer.Length);
                         if (bytesReadLength == 0)
                         {
+                            // Client disconnected gracefully
                             Console.WriteLine($"Client {remoteEndPoint} disconnected.");
-                            break;
+                            break; // Thoát vòng lặp xử lý client này
                         }
                         if (bytesReadLength < 4)
                         {
-                            Console.WriteLine($"Error: Did not receive full length prefix from client {remoteEndPoint}.");
+                            // Lỗi: Không nhận đủ 4 byte độ dài
+                            Console.WriteLine($"Error: Did not receive full length prefix (expected 4 bytes, got {bytesReadLength}) from client {remoteEndPoint}. Disconnecting.");
+                            responseBase.Message = "Protocol error: Incomplete length prefix.";
+                            await SendResponse(stream, responseBase); // Gửi lỗi về client
                             break;
                         }
+
                         int requestLength = BitConverter.ToInt32(lengthBuffer, 0);
-                        if (requestLength <= 0 || requestLength > 10 * 1024 * 1024)
+
+                        if (requestLength <= 0 || requestLength > 10 * 1024 * 1024) // Giới hạn kích thước tin nhắn (ví dụ 10MB)
                         {
-                            Console.WriteLine($"Error: Invalid request length ({requestLength}) from client {remoteEndPoint}.");
+                            Console.WriteLine($"Error: Invalid request length ({requestLength}) from client {remoteEndPoint}. Disconnecting.");
+                            responseBase.Message = "Protocol error: Invalid request length.";
+                            await SendResponse(stream, responseBase);
                             break;
                         }
+
+                        // 2. Đọc dữ liệu JSON dựa trên độ dài đã nhận
                         byte[] requestDataBuffer = new byte[requestLength];
                         int totalBytesReadData = 0;
                         int bytesToReadData = requestLength;
+
                         while (bytesToReadData > 0)
                         {
                             int currentRead = await stream.ReadAsync(requestDataBuffer, totalBytesReadData, bytesToReadData);
                             if (currentRead == 0)
                             {
+                                // Client disconnected while sending data
                                 Console.WriteLine($"Client {remoteEndPoint} disconnected unexpectedly while sending data.");
-                                break;
+                                break; // Thoát vòng lặp xử lý client này
                             }
                             totalBytesReadData += currentRead;
                             bytesToReadData -= currentRead;
                         }
+
                         if (totalBytesReadData < requestLength)
                         {
-                            Console.WriteLine($"Error: Did not receive full data for request from client {remoteEndPoint}.");
+                            // Lỗi: Không nhận đủ dữ liệu JSON
+                            Console.WriteLine($"Error: Did not receive full data for request (expected {requestLength}, got {totalBytesReadData}) from client {remoteEndPoint}. Disconnecting.");
+                            responseBase.Message = "Protocol error: Incomplete request data.";
+                            await SendResponse(stream, responseBase);
                             break;
                         }
 
                         requestJson = Encoding.UTF8.GetString(requestDataBuffer, 0, totalBytesReadData);
                         Console.WriteLine($"Received from client {remoteEndPoint}: {requestJson}");
+
+                        // Deserialize request
                         requestBase = JsonConvert.DeserializeObject<ClientRequestBase>(requestJson);
+
                         if (requestBase == null || string.IsNullOrWhiteSpace(requestBase.MethodName))
                         {
                             responseBase.Message = "Invalid request: MethodName is missing.";
                         }
                         else
                         {
+                            // Xử lý logic theo MethodName
                             switch (requestBase.MethodName)
                             {
                                 // ======================================
                                 // CÁC CASE CHO CATEGORY
                                 // ======================================
                                 case "GetAllCategories":
-                                    var categories = categoryService.GetAll();
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Categories retrieved successfully.";
-                                    responseBase.Data = categories; // Gán trực tiếp list DTO
-                                    break;
+                                var categories = categoryService.GetAll();
+                                responseBase.Success = true;
+                                responseBase.Message = "Categories retrieved successfully.";
+                                responseBase.Data = categories; // Gán trực tiếp list DTO
+                                break;
 
                                 case "GetCategoryById": // Thêm case lấy theo ID
                                     int categoryId = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
@@ -138,21 +151,12 @@ namespace ElectronicsStore.Server
                                     break;
 
                                 case "GetCategoriesByName":
-                                    string categoryKeyword = requestBase.Data.ToString();
+                                    string categoryKeyword = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
                                     var filteredCategories = categoryService.GetByName(categoryKeyword);
                                     responseBase.Success = true;
                                     responseBase.Message = "Categories filtered successfully.";
                                     responseBase.Data = filteredCategories;
                                     break;
-                               /* case "GetCategoriesByName":
-                                    // Lấy đối tượng JToken từ requestBase.Data
-                                    var dataToken = (Newtonsoft.Json.Linq.JToken)requestBase.Data;
-                                    string categoryKeyword = dataToken.ToObject<string>();
-                                    var filteredCategories = categoryService.GetByName(categoryKeyword);
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Categories filtered successfully.";
-                                    responseBase.Data = filteredCategories;
-                                    break;*/
 
                                 case "AddCategory":
                                     var categoryToAdd = JsonConvert.DeserializeObject<CategoryDTO>(requestBase.Data.ToString());
@@ -201,11 +205,11 @@ namespace ElectronicsStore.Server
                                     break;
 
                                 case "GetManufacturersByName":
-                                    string manufacturerNameKeyword = requestBase.Data.ToString();
+                                    string manufacturerNameKeyword = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
                                     var filteredManufacturers = manufacturerService.GetByName(manufacturerNameKeyword);
+                                    responseBase.Data = filteredManufacturers;
                                     responseBase.Success = true;
                                     responseBase.Message = "Manufacturers retrieved successfully by name.";
-                                    responseBase.Data = filteredManufacturers;
                                     break;
 
                                 case "AddManufacturer":
@@ -252,277 +256,84 @@ namespace ElectronicsStore.Server
                                 // CÁC CASE CHO PRODUCT
                                 // ======================================
                                 case "GetAllProducts":
-                                    try
+                                    var products = productService.GetAllList();
+                                    responseBase.Data = products;
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Products retrieved successfully.";
+                                    break;
+
+                                case "GetProductById": // Thêm case lấy theo ID
+                                    int productId = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
+                                    var product = productService.GetById(productId);
+                                    if (product != null)
                                     {
-                                        var products = productService.GetAllList();
-                                        responseBase.Data = products;
                                         responseBase.Success = true;
-                                        responseBase.Message = "Products retrieved successfully.";
+                                        responseBase.Message = "Product retrieved successfully.";
+                                        responseBase.Data = product;
                                     }
-                                    catch (Exception ex)
+                                    else
                                     {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error retrieving all products: {ex.Message}";
-                                        responseBase.Data = null;
+                                        responseBase.Message = "Product not found.";
                                     }
                                     break;
-
-                                case "GetProductById":
-                                    try
-                                    {
-                                        int productId = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                        var product = productService.GetById(productId);
-                                        if (product != null)
-                                        {
-                                            responseBase.Success = true;
-                                            responseBase.Message = "Product retrieved successfully.";
-                                            responseBase.Data = product;
-                                        }
-                                        else
-                                        {
-                                            responseBase.Success = false;
-                                            responseBase.Message = "Product not found.";
-                                            responseBase.Data = null;
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error retrieving product by ID: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
-                                    break;
-
-                                case "GetProductImage":
-                                    try
-                                    {
-                                        string fileName = requestBase.Data.ToString();
-                                        string serverImagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", fileName);
-
-                                        if (File.Exists(serverImagePath))
-                                        {
-                                            byte[] imageData = await File.ReadAllBytesAsync(serverImagePath);
-                                            // Chuyển đổi mảng byte thành chuỗi Base64 để gửi qua mạng
-                                            string base64Image = Convert.ToBase64String(imageData);
-
-                                            responseBase.Success = true;
-                                            responseBase.Message = "Image data sent successfully.";
-                                            responseBase.Data = base64Image;
-                                        }
-                                        else
-                                        {
-                                            responseBase.Success = false;
-                                            responseBase.Message = "Image not found on server.";
-                                            responseBase.Data = null;
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error retrieving image: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
-                                    break;
-
-                                /*Thêm case mới để xử lý yêu cầu lấy ảnh
-                               case "GetProductImage":
-                                   {
-                                   // Dữ liệu được gửi lên là tên file ảnh (string)
-                                   // Sử dụng JsonConvert.DeserializeObject để lấy tên file từ trường Data
-                                   string? fileName = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
-
-                                   if (string.IsNullOrEmpty(fileName))
-                                   {
-                                       responseBase = new ServerResponseBase { Success = false, Message = "File name is required." };
-                                   }
-                                   else
-                                   {
-                                       // Gọi ProductService để lấy mảng byte của ảnh
-                                       byte[]? imageData = productService.GetProductImage(fileName);
-
-                                       if (imageData != null)
-                                       {
-                                           // Trả về mảng byte của ảnh
-                                           responseBase = new ServerResponseBase { Data = imageData, Success = true };
-                                       }
-                                       else
-                                       {
-                                           // Trả về lỗi nếu không tìm thấy file
-                                           responseBase = new ServerResponseBase { Success = false, Message = "Image not found." };
-                                       }
-                                   }
-                                   }
-                                   break;*/
 
                                 case "SearchProducts":
-                                    try
-                                    {
-                                        string productKeyword;
-        
-                                        // Handle cases where Data is a string or a JToken.
-                                        // This is a more robust way to extract the keyword.
-                                        if (requestBase.Data is string dataString)
-                                        {
-                                            productKeyword = dataString;
-                                        }
-                                        else
-                                        {
-                                            // If it's not a string, assume it's a JToken and try to convert it.
-                                            // This handles cases where the payload is sent as a JSON object, even if it just contains one value.
-                                            productKeyword = (requestBase.Data as Newtonsoft.Json.Linq.JToken)?.ToObject<string>();
-                                        }
-
-                                        // Add a null check before calling GetByName to prevent the "Value cannot be null" error.
-                                        var filteredProducts = productService.GetByName(productKeyword ?? string.Empty);
-
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Products retrieved successfully by name.";
-                                        responseBase.Data = filteredProducts;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error processing SearchProducts: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
+                                    string productKeyword = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
+                                    var filteredProducts = productService.GetByName(productKeyword);
+                                    responseBase.Data = filteredProducts;
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Products searched successfully.";
                                     break;
 
                                 case "AddProduct":
-                                    try
-                                    {
-                                        var productToAdd = JsonConvert.DeserializeObject<ProductDTO>(requestBase.Data.ToString());
-                                        var addedProduct = productService.Add(productToAdd);
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Product added successfully.";
-                                        responseBase.Data = addedProduct; // Gán đối tượng đã thêm vào Data
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error adding product: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
+                                    var productToAdd = JsonConvert.DeserializeObject<ProductDTO>(requestBase.Data.ToString());
+                                    productService.Add(productToAdd);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Product added successfully.";
                                     break;
 
                                 case "UpdateProduct":
-                                    try
-                                    {
-                                        var productToUpdate = JsonConvert.DeserializeObject<ProductDTO>(requestBase.Data.ToString());
-                                        var updatedProduct = productService.Update(productToUpdate.ID, productToUpdate);
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Product updated successfully.";
-                                        responseBase.Data = updatedProduct; // Gán đối tượng đã cập nhật vào Data
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error updating product: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
+                                    var productToUpdate = JsonConvert.DeserializeObject<ProductDTO>(requestBase.Data.ToString());
+                                    productService.Update(productToUpdate.ID, productToUpdate);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Product updated successfully.";
                                     break;
+
                                 case "DeleteProduct":
-                                    try
-                                    {
-                                        int productIdToDelete = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                        bool success = productService.Delete(productIdToDelete);
-
-                                        responseBase.Success = success;
-                                        responseBase.Message = success ? "Product deleted successfully." : "Failed to delete product or product not found.";
-                                        responseBase.Data = success; // Có thể trả về true/false để client dễ xử lý
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error deleting product: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
+                                    int productIdToDelete = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
+                                    productService.Delete(productIdToDelete);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Product deleted successfully.";
                                     break;
-
-                                case "UploadProductImage":
-                                    try
-                                    {
-                                        // Deserialize đối tượng ImageUploadRequestDTO từ request
-                                        var requestData = JsonConvert.DeserializeObject<ImageUploadRequestDTO>(requestBase.Data.ToString());
-
-                                        // Kiểm tra xem dữ liệu có hợp lệ không
-                                        if (requestData == null || string.IsNullOrEmpty(requestData.FileName) || requestData.ImageData == null)
-                                        {
-                                            responseBase.Success = false;
-                                            responseBase.Message = "Invalid image upload data.";
-                                            responseBase.Data = null;
-                                            break;
-                                        }
-
-                                        // Tạo đường dẫn đầy đủ để lưu file ảnh trên server
-                                        // (Kiểm tra lại đường dẫn này cho chính xác, ví dụ: "Images/Products")
-                                        string serverImagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", requestData.FileName);
-
-                                        // Ghi mảng byte của ảnh vào file
-                                        File.WriteAllBytes(serverImagePath, requestData.ImageData);
-
-                                        // Trả về phản hồi thành công
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Image uploaded successfully.";
-                                        responseBase.Data = true; // Trả về true để client xác nhận thành công
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        // Xử lý lỗi nếu có trong quá trình lưu file
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error uploading image: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
-                                    break;
-
-                                /* case "DeleteProduct":
-                                     try
-                                     {
-                                         int productIdToDelete = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                         bool success = productService.Delete(productIdToDelete);
-
-                                         responseBase.Success = success;
-                                         responseBase.Message = success ? "Product deleted successfully." : "Failed to delete product or product not found.";
-                                         responseBase.Data = null; // Không cần trả về dữ liệu sau khi xóa
-                                     }
-                                     catch (Exception ex)
-                                     {
-                                         responseBase.Success = false;
-                                         responseBase.Message = $"Error deleting product: {ex.Message}";
-                                         responseBase.Data = null;
-                                     }
-                                     break;*/
 
                                 case "BulkAddProducts":
-                                    // Giữ nguyên logic của bạn, nhưng thêm try-catch ở mức cao hơn để đảm bảo không crash
-                                    try
+                                    var productsToImport = JsonConvert.DeserializeObject<List<ProductDTO>>(requestBase.Data.ToString());
+                                    int productSuccessCount = 0;
+                                    foreach (var dto in productsToImport)
                                     {
-                                        var productsToImport = JsonConvert.DeserializeObject<List<ProductDTO>>(requestBase.Data.ToString());
-                                        int productSuccessCount = 0;
-                                        foreach (var dto in productsToImport)
+                                        try
                                         {
-                                            try
-                                            {
-                                                // Gọi phương thức Add đã được sửa để lấy ID mới nếu cần
-                                                productService.Add(dto);
-                                                productSuccessCount++;
-                                            }
-                                            catch (Exception exInner)
-                                            {
-                                                // Log lỗi chi tiết của từng sản phẩm
-                                                Console.WriteLine($"Error adding product during bulk import: {exInner.Message} - Product: {dto.ProductName}");
-                                            }
+                                            productService.Add(dto);
+                                            productSuccessCount++;
                                         }
-                                        responseBase.Success = true;
-                                        responseBase.Message = $"{productSuccessCount} products imported successfully.";
-                                        responseBase.Data = null;
+                                        catch (Exception exInner)
+                                        {
+                                            Console.WriteLine($"Error adding product during bulk import: {exInner.Message} - Product: {dto.ProductName}");
+                                        }
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error during bulk product import: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
+                                    responseBase.Success = true;
+                                    responseBase.Message = $"{productSuccessCount} products imported successfully.";
                                     break;
+
+                                /*case "UpdateProductImage":
+                                    // Giả định ProductDTO có trường Image
+                                    var updateImageDto = JsonConvert.DeserializeObject<ProductDTO>(requestBase.Data.ToString());
+                                    productService.UpdateImage(updateImageDto.ID, updateImageDto.Image);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Product image updated successfully.";
+                                    break;*//*
+                                
+
 
                                 // ======================================
                                 // CÁC CASE CHO EMPLOYEE                |
@@ -550,19 +361,11 @@ namespace ElectronicsStore.Server
                                     break;
 
                                 case "SearchEmployees":
-                                    string employeeKeyword = requestBase.Data.ToString();
+                                    string employeeKeyword = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
                                     var filteredEmployees = employeeService.GetByFullName(employeeKeyword);
                                     responseBase.Success = true;
                                     responseBase.Message = "Employees filtered successfully.";
                                     responseBase.Data = filteredEmployees;
-                                    break;
-
-                                case "GetEmployeeByName":
-                                    string key = requestBase.Data.ToString();
-                                    var employeeobj = employeeService.GetByName(key);
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Employees filtered successfully.";
-                                    responseBase.Data = employeeobj;
                                     break;
 
                                 case "AddEmployee":
@@ -605,7 +408,7 @@ namespace ElectronicsStore.Server
                                     responseBase.Message = $"{employeeSuccessCount} employee(s) imported successfully.";
                                     break;
 
-                                case "Authenticate": // Đối với nhân viên đăng nhập
+                                case "AuthenticateEmployee": // Đối với nhân viên đăng nhập
                                     try
                                     {
                                         var employeeLoginRequest = JsonConvert.DeserializeObject<LoginRequestDTO>(requestBase.Data.ToString());
@@ -616,7 +419,7 @@ namespace ElectronicsStore.Server
                                         else
                                         {
                                             var authenticatedEmployee = employeeService.Authentication(employeeLoginRequest.Username, employeeLoginRequest.Password);
-
+                                        
                                             if (authenticatedEmployee != null)
                                             {
                                                 responseBase.Success = true;
@@ -649,38 +452,55 @@ namespace ElectronicsStore.Server
                                         Console.Error.WriteLine($"Authentication unexpected Error: {authEx}");
                                     }
                                     break;
-                                case "ChangeEmployeePassword":
-                                    var changePasswordRequest = JsonConvert.DeserializeObject<ChangePasswordRequestDTO>(requestBase.Data.ToString());
-                                    if (changePasswordRequest == null)
-                                    {
-                                        responseBase.Message = "Invalid request data.";
-                                        break;
-                                    }
 
-                                    // Gọi service để xử lý
-                                    try
+                                /*case "RegisterEmployee":
+                                    var registerEmployeeRequest = JsonConvert.DeserializeObject<RegisterRequestDTO>(requestBase.Data.ToString());
+                                    employeeService.RegisterEmployee(registerEmployeeRequest);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Employee registered successfully.";
+                                    break;
+                                */
+                                /*case "ChangeEmployeePassword":
+                                    var changeEmployeePassRequest = JsonConvert.DeserializeObject<ChangePasswordRequestDTO>(requestBase.Data.ToString());
+                                    bool changed = employeeService.ChangePassword(changeEmployeePassRequest.EmployeeId, changeEmployeePassRequest.OldPassword, changeEmployeePassRequest.NewPassword);
+                                    if (changed)
                                     {
-                                        // Service sẽ trả về true nếu thành công, false nếu mật khẩu cũ sai
-                                        bool changeSuccess = employeeService.ChangePassword(changePasswordRequest.EmployeeId, changePasswordRequest.OldPassword, changePasswordRequest.NewPassword);
-
-                                        responseBase.Success = changeSuccess; // Gán kết quả từ service
-                                        if (changeSuccess)
-                                        {
-                                            responseBase.Message = "Password changed successfully.";
-                                            responseBase.Data = true; // Trả về true để client biết thành công
-                                        }
-                                        else
-                                        {
-                                            responseBase.Message = "Old password is incorrect.";
-                                            responseBase.Data = false;
-                                        }
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Employee password changed successfully.";
                                     }
-                                    catch (Exception ex)
+                                    else
                                     {
-                                        responseBase.Message = $"Error changing password: {ex.Message}";
-                                        responseBase.Success = false;
+                                        responseBase.Message = "Failed to change employee password. Check old password.";
                                     }
                                     break;
+
+                                case "RequestEmployeePasswordReset":
+                                    var employeeEmailRequest = JsonConvert.DeserializeObject<EmailRequestDTO>(requestBase.Data.ToString());
+                                    bool resetRequested = employeeService.RequestPasswordReset(employeeEmailRequest.Email);
+                                    if (resetRequested)
+                                    {
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Password reset link sent to employee email.";
+                                    }
+                                    else
+                                    {
+                                        responseBase.Message = "Failed to send password reset link.";
+                                    }
+                                    break;
+
+                                case "ResetEmployeePassword":
+                                    var resetEmployeePassRequest = JsonConvert.DeserializeObject<ResetPasswordRequestDTO>(requestBase.Data.ToString());
+                                    bool passwordReset = employeeService.UpdatePassword(resetEmployeePassRequest.Email, resetEmployeePassRequest.Token, resetEmployeePassRequest.NewPassword);
+                                    if (passwordReset)
+                                    {
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Employee password reset successfully.";
+                                    }
+                                    else
+                                    {
+                                        responseBase.Message = "Failed to reset employee password. Invalid token or email.";
+                                    }
+                                    break;*//*
 
                                 // ======================================
                                 // CÁC CASE CHO CUSTOMER
@@ -708,64 +528,25 @@ namespace ElectronicsStore.Server
                                     break;
 
                                 case "SearchCustomers":
-                                    string customerKeyword = requestBase.Data.ToString();
+                                    string customerKeyword = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
                                     var filteredCustomers = customerService.GetByName(customerKeyword);
                                     responseBase.Success = true;
                                     responseBase.Message = "Customers filtered successfully.";
                                     responseBase.Data = filteredCustomers;
                                     break;
 
-                                case "AddReturnCustomer":
-                                    try
-                                    {
-                                        var customerToAdd = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
-                                        // Gọi hàm Add đã được sửa đổi và lấy kết quả trả về
-                                        var addedCustomer = customerService.AddReturn(customerToAdd);
-
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Customer added successfully.";
-                                        // Gán đối tượng đã được thêm thành công (có ID) vào Data
-                                        responseBase.Data = addedCustomer;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error adding customer: {ex.Message}";
-                                        responseBase.Data = null;
-                                    }
-                                    break;
                                 case "AddCustomer":
-                                    try
-                                    {
-                                        var customerToAdd = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
-                                        customerService.Add(customerToAdd);
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Customer added successfully.";
-                                        responseBase.Data = customerToAdd; 
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error adding customer: {ex.Message}";
-                                        responseBase.Data = null; // Hoặc một đối tượng CustomerDTO rỗng
-                                    }
+                                    CustomerDTO customerToAdd = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
+                                    customerService.Add(customerToAdd);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Customer added successfully.";
                                     break;
 
                                 case "UpdateCustomer":
-                                    try
-                                    {
-                                        CustomerDTO customerToUpdate = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
-                                        customerService.Update(customerToUpdate.ID, customerToUpdate);
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Customer updated successfully.";
-                                        responseBase.Data = true; 
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error updating customer: {ex.Message}";
-                                        responseBase.Data = false; // <--- Sửa ở đây để trả về false khi có lỗi
-                                    }
+                                    CustomerDTO customerToUpdate = JsonConvert.DeserializeObject<CustomerDTO>(requestBase.Data.ToString());
+                                    customerService.Update(customerToUpdate.ID, customerToUpdate);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Customer updated successfully.";
                                     break;
 
                                 case "DeleteCustomer":
@@ -778,18 +559,18 @@ namespace ElectronicsStore.Server
                                 // ======================================
                                 // CÁC CASE CHO ORDER
                                 // ======================================
-
                                 case "GetAllOrders":
                                     var orders = orderService.GetAllList();
                                     responseBase.Success = true;
                                     responseBase.Message = "Orders retrieved successfully.";
                                     responseBase.Data = orders;
                                     break;
+
                                 case "GetOrderById":
                                     try
                                     {
-                                        int id = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                        var order = orderService.GetById(id);
+                                        int orderId = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
+                                        var order = orderService.GetById(orderId);
                                         if (order != null)
                                         {
                                             responseBase.Success = true;
@@ -799,43 +580,16 @@ namespace ElectronicsStore.Server
                                         else
                                         {
                                             responseBase.Success = false;
-                                            responseBase.Message = $"Order with ID {id} not found.";
+                                            responseBase.Message = $"Order with ID {orderId} not found.";
                                         }
-                                    }
-                                    catch (Exception ex)        
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Error retrieving order: {ex.Message}";
-                                    }
-                                    break;
-                                case "SearchOrder":
-                                    try
-                                    {
-                                        int searchorderId = requestBase.Data is long idLong ? (int)idLong : JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                        var order = orderService.GetById(searchorderId);
-                                        List<OrderDTO> orderList = new List<OrderDTO>();
-
-                                        if (order != null)
-                                        {
-                                            orderList.Add(order);
-                                            responseBase.Success = true;
-                                            responseBase.Message = "Order retrieved successfully.";
-                                            //responseBase.Data = order;
-                                        }
-                                        else
-                                        {
-                                            responseBase.Success = false;
-                                            responseBase.Message = $"Order with ID {searchorderId} not found.";
-                                        }
-                                        responseBase.Data = orderList; // Luôn trả về một danh sách
                                     }
                                     catch (Exception ex)
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error retrieving order: {ex.Message}";
-                                        responseBase.Data = null;
                                     }
                                     break;
+
                                 case "GetOrdersByCustomerId":
                                     try
                                     {
@@ -851,6 +605,7 @@ namespace ElectronicsStore.Server
                                         responseBase.Message = $"Error retrieving orders by customer ID: {ex.Message}";
                                     }
                                     break;
+
                                 case "GetOrdersByEmployeeId":
                                     try
                                     {
@@ -865,13 +620,6 @@ namespace ElectronicsStore.Server
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error retrieving orders by employee ID: {ex.Message}";
                                     }
-                                    break;
-                                case "GetOrdersByStatus":
-                                    var status = requestBase.Data.ToString();
-                                    var filteredOrders = orderService.GetByStatus(status); // Cần thêm phương thức này vào OrderService
-                                    responseBase.Success = true;
-                                    responseBase.Message = $"Orders with status '{status}' retrieved successfully.";
-                                    responseBase.Data = filteredOrders;
                                     break;
 
                                 case "CreateOrder":
@@ -888,51 +636,6 @@ namespace ElectronicsStore.Server
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error creating order: {ex.Message}";
-                                        responseBase.Data = -1;
-                                    }
-                                    break;
-                                case "CreateTmpOrder":
-                                    try
-                                    {
-                                        var orderWithDetailsCreate = JsonConvert.DeserializeObject<OrderWithDetailsDTO>(requestBase.Data.ToString());
-                                        int newOrderId = orderService.CreateTmpOrder(orderWithDetailsCreate.Order, orderWithDetailsCreate.OrderDetails);
-
-                                        responseBase.Success = true;
-                                        responseBase.Message = "Order and details created successfully.";
-                                        responseBase.Data = newOrderId;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        // Log lỗi chi tiết ở server để debug dễ hơn
-                                        Console.WriteLine($"Error creating order: {ex.Message}");
-                                        if (ex.InnerException != null)
-                                        {
-                                            Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                                        }
-
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Server error for action 'CreateOrder': {ex.Message}";
-                                        responseBase.Data = -1; // Trả về -1 để báo hiệu lỗi
-                                    }
-                                    break;
-
-                                case "UpdateOrderStatus":
-                                    var orderStatusData = JObject.Parse(requestBase.Data.ToString());
-                                    int orderId = (int)orderStatusData["ID"];
-                                    string newStatus = (string)orderStatusData["Status"];
-
-                                    bool updated = orderService.UpdateStatus(orderId, newStatus); // Cần thêm phương thức này vào OrderService
-                                    if (updated)
-                                    {
-                                        responseBase.Success = true;
-                                        responseBase.Message = $"Order {orderId} status updated to '{newStatus}' successfully.";
-                                        responseBase.Data = true;
-                                    }
-                                    else
-                                    {
-                                        responseBase.Success = false;
-                                        responseBase.Message = $"Order {orderId} not found or status update failed.";
-                                        responseBase.Data = false;
                                     }
                                     break;
 
@@ -944,13 +647,12 @@ namespace ElectronicsStore.Server
 
                                         responseBase.Success = true;
                                         responseBase.Message = "Order and details updated successfully.";
-                                        responseBase.Data = true;
+                                        responseBase.Data = null;
                                     }
                                     catch (Exception ex)
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error updating order: {ex.Message}";
-                                        responseBase.Data = false;
                                     }
                                     break;
 
@@ -961,27 +663,18 @@ namespace ElectronicsStore.Server
                                         orderService.DeleteOrderAndDetails(orderIdToDelete);
                                         responseBase.Success = true;
                                         responseBase.Message = "Order and its details deleted successfully.";
-                                        responseBase.Data = true;
+                                        responseBase.Data = null;
                                     }
                                     catch (Exception ex)
                                     {
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error deleting order: {ex.Message}";
-                                        responseBase.Data = false;
                                     }
                                     break;
-                                case "ConfirmOrder":
-                                    var confirmOrderDto = JsonConvert.DeserializeObject<ConfirmOrderDTO>(requestBase.Data.ToString());
-                                    orderService.ConfirmOrder(confirmOrderDto);
-                                    responseBase.Success = true;
-                                    responseBase.Data = true; 
-                                    break;
-
 
                                 // ======================================
                                 // CÁC CASE CHO ORDER DETAILS
                                 // ======================================
-
                                 case "GetOrderDetailsByOrderId":
                                     try
                                     {
@@ -1081,30 +774,126 @@ namespace ElectronicsStore.Server
                                         responseBase.Message = $"Error adding multiple order details: {ex.Message}";
                                     }
                                     break;
+                                /*case "BulkUpdateOrderDetails": // Thêm case Bulk Update OrderDetails
+                                    var orderDetailsToUpdate = JsonConvert.DeserializeObject<List<OrderDetailsDTO>>(requestBase.Data.ToString());
+                                    orderDetailToUpdate = JsonConvert.DeserializeObject<OrderDetailsDTO>(requestBase.Data.ToString());
+
+                                    orderDetailsService.UpdateOrderDetails(orderDetailToUpdate.ID,orderDetailsToUpdate);
+                                    responseBase.Success = true;
+                                    responseBase.Message = $"{orderDetailsToUpdate.Count} order details updated successfully.";
+                                    break;*//*
+
+                                // ======================================
+                                // CÁC CASE CHO USER (Nếu có User Service riêng)
+                                // ======================================
+                                /*case "RegisterUser":
+                                    var registerRequest = JsonConvert.DeserializeObject<RegisterRequestDTO>(requestBase.Data.ToString());
+                                    userService.Register(registerRequest);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "User registered successfully. Please confirm your account.";
+                                    break;
+
+                                case "ConfirmAccount":
+                                    var confirmAccountRequest = JsonConvert.DeserializeObject<ConfirmAccountRequestDTO>(requestBase.Data.ToString());
+                                    userService.ConfirmAccount(confirmAccountRequest);
+                                    responseBase.Success = true;
+                                    responseBase.Message = "Account confirmed successfully.";
+                                    break;
+
+                                case "ChangeUserPassword":
+                                    var changePassRequest = JsonConvert.DeserializeObject<ChangePasswordRequestDTO>(requestBase.Data.ToString());
+                                    bool userPassChanged = userService.ChangePassword(changePassRequest);
+                                    if (userPassChanged)
+                                    {
+                                        responseBase.Success = true;
+                                        responseBase.Message = "User password changed successfully.";
+                                    }
+                                    else
+                                    {
+                                        responseBase.Message = "Failed to change user password. Check old password or user ID.";
+                                    }
+                                    break;
+
+                                case "ForgotPassword":
+                                    var forgotPassEmailRequest = JsonConvert.DeserializeObject<EmailRequestDTO>(requestBase.Data.ToString());
+                                    bool forgotPassSuccess = userService.ForgotPassword(forgotPassEmailRequest);
+                                    if (forgotPassSuccess)
+                                    {
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Password reset link sent to your email.";
+                                    }
+                                    else
+                                    {
+                                        responseBase.Message = "Failed to send password reset link. Email not found or other error.";
+                                    }
+                                    break;
+
+                                case "ResetPassword":
+                                    var resetPassRequest = JsonConvert.DeserializeObject<ResetPasswordRequestDTO>(requestBase.Data.ToString());
+                                    bool resetSuccess = userService.ResetPassword(resetPassRequest);
+                                    if (resetSuccess)
+                                    {
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Password reset successfully.";
+                                    }
+                                    else
+                                    {
+                                        responseBase.Message = "Failed to reset password. Invalid token or email.";
+                                    }
+                                    break;
+
+                                case "AuthenticateUser": // Thường dành cho khách hàng đăng nhập
+                                    var loginRequest = JsonConvert.DeserializeObject<LoginRequestDTO>(requestBase.Data.ToString());
+
+                                    if (loginRequest == null || string.IsNullOrWhiteSpace(loginRequest.Username) || string.IsNullOrWhiteSpace(loginRequest.Password))
+                                    {
+                                        responseBase.Message = "Username and password are required.";
+                                    }
+                                    else
+                                    {
+                                        // Giả sử CustomerService hoặc UserService có phương thức Authenticate cho khách hàng
+                                        // Tùy vào cách bạn quản lý tài khoản người dùng (khách hàng, nhân viên riêng hay chung)
+                                        // Ví dụ: var authenticatedCustomer = customerService.Authenticate(loginRequest.Username, loginRequest.Password);
+                                        // Hoặc: var authenticatedUser = userService.Authenticate(loginRequest.Username, loginRequest.Password);
+                                        // Hiện tại, chúng ta đã có Authenticate trong EmployeeService. Nếu có thêm cho Customer, bạn có thể gọi ở đây.
+                                        // Để đơn giản, nếu EmployeeService xử lý cả user chung, có thể dùng nó.
+                                        var authenticatedUser = employeeService.Authenticate(loginRequest.Username, loginRequest.Password); // Sử dụng tạm employeeService nếu chưa có UserService.Authenticate
+
+                                        if (authenticatedUser != null)
+                                        {
+                                            responseBase.Success = true;
+                                            responseBase.Message = "Authentication successful.";
+                                            responseBase.Data = authenticatedUser; // Trả về thông tin user hoặc token
+                                        }
+                                        else
+                                        {
+                                            responseBase.Message = "Invalid username or password.";
+                                        }
+                                    }
+                                    break;*//*
+
                                 default:
                                     responseBase.Message = $"Unknown method: {requestBase.MethodName}";
                                     break;
-                            }
+                                }
                         }
                     }
                     catch (JsonException jEx)
                     {
-                        responseBase.Success = false;
                         responseBase.Message = $"Invalid JSON format received: {jEx.Message}. Request: '{requestJson}'";
                         Console.Error.WriteLine($"JSON Deserialization Error: {jEx.Message} | Raw request: '{requestJson}'");
                     }
                     catch (Exception ex)
                     {
-                        responseBase.Success = false;
                         responseBase.Message = $"Server error processing request: {ex.Message}";
-                     
-                        Console.Error.WriteLine($"Error in HandleClientAsync (inner try-catch): {ex}");
+                        Console.Error.WriteLine($"Error in HandleClientAsync (outer try-catch): {ex}");
                     }
                     finally
                     {
+                        // Luôn gửi phản hồi về client sau mỗi yêu cầu
                         await SendResponse(stream, responseBase);
                     }
-                }
+                } // End of while loop
             }
             catch (IOException ioEx)
             {
@@ -1122,17 +911,21 @@ namespace ElectronicsStore.Server
             {
                 client.Close();
                 Console.WriteLine($"Client disconnected: {remoteEndPoint}");
-            }
+            }*/
         }
 
+        // Phương thức trợ giúp để gửi phản hồi
         private static async Task SendResponse(NetworkStream stream, ServerResponseBase response)
         {
             try
             {
                 string responseJson = JsonConvert.SerializeObject(response);
                 byte[] responseBytes = Encoding.UTF8.GetBytes(responseJson);
+
+                // QUAN TRỌNG: Gửi 4 bytes độ dài của dữ liệu trước
                 byte[] lengthBytes = BitConverter.GetBytes(responseBytes.Length);
-                await stream.WriteAsync(lengthBytes, 0, lengthBytes.Length);
+                await stream.WriteAsync(lengthBytes, 0, lengthBytes.Length); // Gửi 4 bytes độ dài
+
                 await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
                 await stream.FlushAsync();
                 Console.WriteLine($"Sent response to {stream.Socket.RemoteEndPoint}: {responseJson}");
@@ -1142,9 +935,5 @@ namespace ElectronicsStore.Server
                 Console.Error.WriteLine($"Error sending response to client: {ex.Message}");
             }
         }
-
-
-
-
     }
 }

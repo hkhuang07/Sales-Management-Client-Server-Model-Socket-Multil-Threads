@@ -23,7 +23,7 @@ namespace ElectronicsStore.Presentation
         public int EmployeeID { get; set; }
         public int CustomerID { get; set; }
 
-        public frmOrderDetails(ClientService clientSercive, int orderID = 0)
+       /* public frmOrderDetails(ClientService clientSercive, int orderID = 0)
         {
 
             // Initialize ClientService
@@ -34,6 +34,20 @@ namespace ElectronicsStore.Presentation
 
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString();
             helpProvider1.HelpNamespace = helpURL + "orderdetails.html"; // Fixed typo in "orderdetails"
+        }*/
+        public frmOrderDetails(ClientService clientSercive, int orderID = 0,int userID = 0)
+        {
+
+            // Initialize ClientService
+            //_clientService = new ClientService(ConfigurationManager.AppSettings["ServerIp"], int.Parse(ConfigurationManager.AppSettings["ServerPort"]));
+            _clientService = clientSercive;
+            OrderID = orderID;
+            EmployeeID = userID; // Set EmployeeID from the parameter
+
+            InitializeComponent();
+    
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString();
+            helpProvider1.HelpNamespace = helpURL + "orderdetails.html"; // Fixed typo in "orderdetails"
         }
 
         private async Task LoadData()
@@ -41,10 +55,41 @@ namespace ElectronicsStore.Presentation
             // Load Employees
             try
             {
-                var employees = await _clientService.GetAllEmployeesAsync();
-                cboEmployee.DataSource = employees;
-                cboEmployee.DisplayMember = "FullName";
-                cboEmployee.ValueMember = "ID";
+                if (EmployeeID > 0)
+                {
+                    var employee = await _clientService.GetEmployeeByIdAsync(EmployeeID);
+                    if (employee != null)
+                    {
+                        var employeeList = new List<EmployeeDTO> { employee };
+                        cboEmployee.DataSource = employeeList;
+                        cboEmployee.DisplayMember = "FullName";
+                        cboEmployee.ValueMember = "ID";
+                        cboEmployee.SelectedValue = EmployeeID;
+                    }
+                    else
+                    {
+                        // Nếu EmployeeID không hợp lệ, tải toàn bộ danh sách nhân viên
+                        var employees = await _clientService.GetAllEmployeesAsync();
+                        if (employees != null)
+                        {
+                            cboEmployee.DataSource = employees;
+                            cboEmployee.DisplayMember = "FullName";
+                            cboEmployee.ValueMember = "ID";
+                        }
+                    }
+                }
+                else
+                {
+                    // Nếu EmployeeID không hợp lệ, tải toàn bộ danh sách nhân viên
+                    var employees = await _clientService.GetAllEmployeesAsync();
+                    if (employees != null)
+                    {
+                        cboEmployee.DataSource = employees;
+                        cboEmployee.DisplayMember = "FullName";
+                        cboEmployee.ValueMember = "ID";
+                    }
+                }
+                cboEmployee.Enabled = false; // Luôn tắt ComboBox nhân viên
             }
             catch (Exception ex)
             {
