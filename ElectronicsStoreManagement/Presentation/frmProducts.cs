@@ -96,7 +96,6 @@ namespace ElectronicsStore.Presentation
             }
         }
 
-
         private void EnableControls(bool value)
         {
             btnSave.Enabled = value;
@@ -263,11 +262,7 @@ namespace ElectronicsStore.Presentation
                 Console.WriteLine($"Error downloading image '{fileName}': {ex.Message}");
             }
         }
-
-        /// <summary>
-        /// Loads product data, categories, and manufacturers into the form controls.
-        /// This method is designed to be called whenever the data needs to be refreshed.
-        /// </summary>
+       
         private async Task LoadProductData()
         {
             dataGridView.AutoGenerateColumns = false;
@@ -302,26 +297,33 @@ namespace ElectronicsStore.Presentation
                 cboCategory.DataBindings.Add("SelectedValue", binding, "CategoryID", false, DataSourceUpdateMode.Never);
                 cboManufacturer.DataBindings.Add("SelectedValue", binding, "ManufacturerID", false, DataSourceUpdateMode.Never);
 
+                // Tạo một Dictionary để lưu trữ tên file đã được kiểm tra, tránh trùng lặp
+                var uniqueImageFiles = new HashSet<string>();
 
-                var imageDownloadTasks = new List<Task>();
-                string defaultImagePath = Path.Combine(imagesFolder, "product_default.jpg");
                 // Lặp qua danh sách sản phẩm để kiểm tra và tải ảnh
                 foreach (var product in list)
                 {
                     if (!string.IsNullOrEmpty(product.Image) && product.Image != "product_default.jpg")
                     {
-                        string fullPath = Path.Combine(imagesFolder, product.Image);
-                        // Chỉ tải về nếu file chưa tồn tại trong cache
-                        if (!File.Exists(fullPath))
-                        {
-                            // Thêm task tải ảnh vào danh sách
-                            imageDownloadTasks.Add(DownloadImageAndSaveToCache(product.Image));
-                        }
+                        uniqueImageFiles.Add(product.Image);
                     }
                 }
-                await Task.WhenAll(imageDownloadTasks);
-                dataGridView.Refresh();
 
+                var imageDownloadTasks = new List<Task>();
+                foreach (var fileName in uniqueImageFiles)
+                {
+                    string fullPath = Path.Combine(imagesFolder, fileName);
+                    if (!File.Exists(fullPath))
+                    {
+                        imageDownloadTasks.Add(DownloadImageAndSaveToCache(fileName));
+                    }
+                }
+
+                await Task.WhenAll(imageDownloadTasks);
+
+                // Refresh DataGridView sau khi tất cả các task tải ảnh đã hoàn thành
+                dataGridView.Refresh();
+                
 
                 // Handle displaying images for PictureBox when selected product changes
                 // Remove old event to avoid multiple subscriptions
@@ -398,7 +400,7 @@ namespace ElectronicsStore.Presentation
                             {
                                 picImage.Image = System.Drawing.Image.FromStream(ms);
                             }
-                        } //<--Dòng lỗi
+                        } 
                         else
                         {
                             // Fallback to default if image data is empty or null
@@ -435,8 +437,6 @@ namespace ElectronicsStore.Presentation
             }
         }
             
-      
-
         private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
             // Only process the image column if it exists and is the column we are interested in
@@ -575,38 +575,7 @@ namespace ElectronicsStore.Presentation
                 }
             }
         }
-        /*private async void btnDelete_Click(object sender, EventArgs e)
-        {
-            if (dataGridView.CurrentRow == null)
-            {
-                MessageBox.Show("Please select a product to delete.", "Selection Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            
-            if (MessageBox.Show("Are you sure you want to delete this product?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                try
-                {
-                    int idToDelete = Convert.ToInt32(dataGridView.CurrentRow.Cells["ID"].Value.ToString());
-                    bool success = await _clientService.DeleteProductAsync(idToDelete);
-
-                    if (success)
-                    {
-                        MessageBox.Show("Product deleted successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        await LoadProductData();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Failed to delete product.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error connecting to server or processing request: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }*/
-
+       
         // Event handler for the "Change Image" button
         private void btnChangeImage_Click(object sender, EventArgs e)
         {
@@ -638,6 +607,8 @@ namespace ElectronicsStore.Presentation
                 }
             }
         }
+
+        
         private async void btnSave_Click(object sender, EventArgs e)
         {
             // Bắt đầu với một biến để kiểm soát việc reload dữ liệu
@@ -690,7 +661,7 @@ namespace ElectronicsStore.Presentation
                 }
                 else
                 {
-                    // For new products with no image selected, or if existing product has no image
+                    imageFileNameToSave = "product_default.jpg";
                     dto.Image = imageFileNameToSave;
                 }
 
@@ -772,11 +743,15 @@ namespace ElectronicsStore.Presentation
                 EnableControls(false);
             }
         }
+     
         /*private async void btnSave_Click(object sender, EventArgs e)
         {
+            bool shouldReloadData = false;
+            ProductDTO resultProduct = null;
+            string successMessage = "";
+
             try
             {
-                // Basic validation
                 if (string.IsNullOrWhiteSpace(txtProductName.Text))
                 {
                     MessageBox.Show("Product Name cannot be empty.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -795,80 +770,95 @@ namespace ElectronicsStore.Presentation
 
                 ProductDTO dto = new ProductDTO
                 {
+                    ID = signAdd ? 0 : id, // Gán ID nếu là cập nhật
                     ProductName = txtProductName.Text,
                     Description = txtDescription.Text,
                     Price = (int)numPrice.Value,
                     Quantity = (int)numQuantity.Value,
                     CategoryID = Convert.ToInt32(cboCategory.SelectedValue),
-                    ManufacturerID = Convert.ToInt32(cboManufacturer.SelectedValue)
+                    ManufacturerID = Convert.ToInt32(cboManufacturer.SelectedValue),
+                    // Tạm thời KHÔNG gán Image. Server sẽ gán mặc định nếu không có.
+                    // Sau đó chúng ta sẽ cập nhật lại sau nếu có ảnh.
+                    Image = null
                 };
 
-                // Determine the image filename to send with the DTO for initial save/update
-                if (_selectedImageFileName != null && _selectedImageBytes != null)
+                // Bước 1: Lưu thông tin sản phẩm vào database trước
+                try
                 {
-                    // If a new image is selected, generate a slugged filename for the DTO
-                    // The server will handle saving and associating this file.
-                    dto.Image = _selectedImageFileName.GenerateSlug() + Path.GetExtension(_selectedImageFileName);
+                    if (signAdd)
+                    {
+                        resultProduct = await _clientService.AddProductAsync(dto);
+                        successMessage = "Product added successfully.";
+                    }
+                    else
+                    {
+                        // Khi cập nhật, gửi ID hiện tại
+                        dto.ID = id;
+                        resultProduct = await _clientService.UpdateProductAsync(dto);
+                        successMessage = "Product updated successfully.";
+                    }
                 }
-                else if (!signAdd && binding.Current is ProductDTO currentBoundProduct)
+                catch (Exception ex)
                 {
-                    // If updating and no new image is selected, retain the existing image filename
-                    dto.Image = currentBoundProduct.Image;
-                }
-                else
-                {
-                    // For new products with no image selected, or if existing product has no image
-                    dto.Image = "product_default.jpg";
-                }
-
-
-                ProductDTO resultProduct;
-                if (signAdd)
-                {
-                    resultProduct = await _clientService.AddProductAsync(dto);
-                    id = resultProduct.ID; // Get the new ID to upload the image
-                    MessageBox.Show("Product added successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    dto.ID = id; // Ensure ID is set for update operation
-                    resultProduct = await _clientService.UpdateProductAsync(dto);
-                    MessageBox.Show("Product updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"Error saving product details: {ex.Message}", "Save Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
 
-                // Handle image upload to server if a new image was selected
-                if (_selectedImageBytes != null && _selectedImageBytes.Length > 0 && !string.IsNullOrEmpty(_selectedImageFileName))
+                // Bước 2: Xử lý và tải ảnh lên server nếu có ảnh mới được chọn
+                if (_selectedImageBytes != null && _selectedImageBytes.Length > 0)
                 {
                     try
                     {
-                        // The server will save the image and ensure the Product.Image field is updated
-                        // with the correct filename (the slugged version).
-                        bool uploadSuccess = await _clientService.UploadProductImageAsync(resultProduct.ID, dto.Image, _selectedImageBytes);
+                        // Gọi phương thức để tải ảnh lên server
+                        // Phương thức này sẽ trả về tên file duy nhất được tạo trên server
+                        string uploadedFileName = await _clientService.UploadProductImageAsync(resultProduct.ID, _selectedImageFileName, _selectedImageBytes);
 
-                        if (!uploadSuccess)
+                        if (!string.IsNullOrEmpty(uploadedFileName))
                         {
-                            MessageBox.Show("Failed to upload product image to server. Product details saved.", "Image Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            // Cập nhật tên file trong DTO và trong DB
+                            // Bạn có thể tạo một method mới trên client để chỉ cập nhật tên ảnh.
+                            // Hoặc đơn giản là gọi lại UpdateProduct với DTO đã có tên ảnh mới.
+                            // await _clientService.UpdateProductImageFilename(resultProduct.ID, uploadedFileName); // Logic này đã được xử lý trong UploadProductImageAsync ở server
+
+                            // Cập nhật lại tên ảnh trong đối tượng kết quả để hiển thị ngay
+                            resultProduct.Image = uploadedFileName;
+
+                            MessageBox.Show(successMessage + " Image uploaded successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Product details were saved, but failed to upload image.", "Image Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         }
                     }
                     catch (Exception imageUploadEx)
                     {
-                        MessageBox.Show($"Error uploading image: {imageUploadEx.Message}. Product details saved.", "Image Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Product details saved, but an error occurred during image upload: {imageUploadEx.Message}", "Image Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-                // Important: clear the selected image data after saving/uploading
-                _selectedImageBytes = null;
-                _selectedImageFileName = null;
+                else
+                {
+                    // Nếu không có ảnh mới, chỉ hiển thị thông báo thành công
+                    MessageBox.Show(successMessage, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
 
-
-                await LoadProductData(); // Reload data to update image display
-                EnableControls(false);
+                shouldReloadData = true;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error connecting to server or processing request: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"An unexpected error occurred: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }*/
-
+            finally
+            {
+                if (shouldReloadData)
+                {
+                    await LoadProductData();
+                }
+                EnableControls(false);
+                _selectedImageBytes = null;
+                _selectedImageFileName = null;
+            }
+        }
+        */
         private async void btnCancel_Click(object sender, EventArgs e)
         {
             await LoadProductData();

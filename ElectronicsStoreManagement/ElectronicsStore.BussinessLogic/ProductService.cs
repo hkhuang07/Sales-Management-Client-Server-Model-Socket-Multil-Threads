@@ -83,12 +83,34 @@ namespace ElectronicsStore.BusinessLogic
         public ProductDTO Add(ProductDTO dto)
         {
             Validate(dto);
-            var entity = _mapper.Map<Products>(dto);
-            _repository.Add(entity);
+
+            /*/ Gán giá trị mặc định cho Image ngay từ đầu để tránh lỗi null
+            if (string.IsNullOrEmpty(dto.Image))
+            {
+                dto.Image = "product_default.jpg";
+            }*/
+            Products existing = new Products();
+            if (existing == null)
+                throw new Exception($"Product not found.");
+
+            // Cập nhật các thuộc tính
+            existing.ProductName = dto.ProductName;
+            existing.Price = dto.Price;
+            existing.Quantity = dto.Quantity;
+            existing.Description = dto.Description;
+            existing.ManufacturerID = dto.ManufacturerID;
+            existing.CategoryID = dto.CategoryID;
+
+            // Nếu bạn muốn cập nhật luôn cả tên ảnh
+            existing.Image = dto.Image;
+            //var entity = _mapper.Map<Products>(dto);
+
+            _repository.Add(existing);
             _unitOfWork.SaveChanges();
 
             // Sau khi lưu, entity sẽ có ID mới. Map lại và trả về cho client.
-            return _mapper.Map<ProductDTO>(entity);
+            // Client sẽ sử dụng ID này để gọi hàm UpdateProductImageFilename sau đó.
+            return _mapper.Map<ProductDTO>(existing);
         }
 
         //Cập nhật (Đã sửa: Trả về đối tượng đã cập nhật)
@@ -168,6 +190,28 @@ namespace ElectronicsStore.BusinessLogic
                 } 
                 
             }    
+        }
+        public void UpdateProductImageFilename(int productId, string fileName)
+        {
+            var product = _repository.GetById(productId);
+            if (product == null)
+            {
+                throw new Exception($"Product with ID {productId} not found.");
+            }
+
+            // Xóa file ảnh cũ nếu nó không phải là ảnh mặc định
+            if (!string.IsNullOrEmpty(product.Image) && product.Image != "product_default.jpg")
+            {
+                string oldImagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", product.Image);
+                if (File.Exists(oldImagePath))
+                {
+                    File.Delete(oldImagePath);
+                }
+            }
+
+            product.Image = fileName; // Gán tên file mới
+            _repository.Update(product);
+            _unitOfWork.SaveChanges();
         }
 
         //Delete (Đã sửa: Trả về bool để báo cáo kết quả)

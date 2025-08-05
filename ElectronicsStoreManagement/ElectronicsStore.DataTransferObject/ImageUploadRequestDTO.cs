@@ -11,5 +11,6 @@ namespace ElectronicsStore.DataTransferObject
         public int ProductId { get; set; }
         public string FileName { get; set; }
         public byte[] ImageData { get; set; }
+
     }
 }

@@ -144,15 +144,6 @@ namespace ElectronicsStore.Server
                                     responseBase.Message = "Categories filtered successfully.";
                                     responseBase.Data = filteredCategories;
                                     break;
-                               /* case "GetCategoriesByName":
-                                    // Lấy đối tượng JToken từ requestBase.Data
-                                    var dataToken = (Newtonsoft.Json.Linq.JToken)requestBase.Data;
-                                    string categoryKeyword = dataToken.ToObject<string>();
-                                    var filteredCategories = categoryService.GetByName(categoryKeyword);
-                                    responseBase.Success = true;
-                                    responseBase.Message = "Categories filtered successfully.";
-                                    responseBase.Data = filteredCategories;
-                                    break;*/
 
                                 case "AddCategory":
                                     var categoryToAdd = JsonConvert.DeserializeObject<CategoryDTO>(requestBase.Data.ToString());
@@ -324,36 +315,7 @@ namespace ElectronicsStore.Server
                                     }
                                     break;
 
-                                /*Thêm case mới để xử lý yêu cầu lấy ảnh
-                               case "GetProductImage":
-                                   {
-                                   // Dữ liệu được gửi lên là tên file ảnh (string)
-                                   // Sử dụng JsonConvert.DeserializeObject để lấy tên file từ trường Data
-                                   string? fileName = JsonConvert.DeserializeObject<string>(requestBase.Data.ToString());
-
-                                   if (string.IsNullOrEmpty(fileName))
-                                   {
-                                       responseBase = new ServerResponseBase { Success = false, Message = "File name is required." };
-                                   }
-                                   else
-                                   {
-                                       // Gọi ProductService để lấy mảng byte của ảnh
-                                       byte[]? imageData = productService.GetProductImage(fileName);
-
-                                       if (imageData != null)
-                                       {
-                                           // Trả về mảng byte của ảnh
-                                           responseBase = new ServerResponseBase { Data = imageData, Success = true };
-                                       }
-                                       else
-                                       {
-                                           // Trả về lỗi nếu không tìm thấy file
-                                           responseBase = new ServerResponseBase { Success = false, Message = "Image not found." };
-                                       }
-                                   }
-                                   }
-                                   break;*/
-
+                               
                                 case "SearchProducts":
                                     try
                                     {
@@ -441,57 +403,53 @@ namespace ElectronicsStore.Server
                                 case "UploadProductImage":
                                     try
                                     {
-                                        // Deserialize đối tượng ImageUploadRequestDTO từ request
                                         var requestData = JsonConvert.DeserializeObject<ImageUploadRequestDTO>(requestBase.Data.ToString());
-
-                                        // Kiểm tra xem dữ liệu có hợp lệ không
-                                        if (requestData == null || string.IsNullOrEmpty(requestData.FileName) || requestData.ImageData == null)
+                                        if (requestData == null || requestData.ImageData == null || requestData.ImageData.Length == 0)
                                         {
-                                            responseBase.Success = false;
-                                            responseBase.Message = "Invalid image upload data.";
-                                            responseBase.Data = null;
-                                            break;
+                                            throw new ArgumentException("Invalid image data received.");
                                         }
 
-                                        // Tạo đường dẫn đầy đủ để lưu file ảnh trên server
-                                        // (Kiểm tra lại đường dẫn này cho chính xác, ví dụ: "Images/Products")
-                                        string serverImagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", requestData.FileName);
+                                        // Lưu ảnh vào thư mục Images trên server
+                                        string imagesFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+                                        if (!Directory.Exists(imagesFolder)) Directory.CreateDirectory(imagesFolder);
 
-                                        // Ghi mảng byte của ảnh vào file
-                                        File.WriteAllBytes(serverImagePath, requestData.ImageData);
+                                        string imagePath = Path.Combine(imagesFolder, requestData.FileName);
+                                        await File.WriteAllBytesAsync(imagePath, requestData.ImageData);
 
-                                        // Trả về phản hồi thành công
+                                        // Sau khi lưu file, cập nhật tên file vào DB
+                                        // productService.UpdateProductImageFilename(requestData.ProductId, requestData.FileName);
+
                                         responseBase.Success = true;
                                         responseBase.Message = "Image uploaded successfully.";
-                                        responseBase.Data = true; // Trả về true để client xác nhận thành công
+                                        responseBase.Data = true;
                                     }
                                     catch (Exception ex)
                                     {
-                                        // Xử lý lỗi nếu có trong quá trình lưu file
                                         responseBase.Success = false;
                                         responseBase.Message = $"Error uploading image: {ex.Message}";
-                                        responseBase.Data = null;
+                                        responseBase.Data = false;
                                     }
                                     break;
 
-                                /* case "DeleteProduct":
-                                     try
-                                     {
-                                         int productIdToDelete = JsonConvert.DeserializeObject<int>(requestBase.Data.ToString());
-                                         bool success = productService.Delete(productIdToDelete);
+                                case "UpdateProductImageFilename":
+                                    try
+                                    {
+                                        var requestData = JsonConvert.DeserializeObject<dynamic>(requestBase.Data.ToString());
+                                        int productId = requestData.productId;
+                                        string fileName = requestData.fileName;
 
-                                         responseBase.Success = success;
-                                         responseBase.Message = success ? "Product deleted successfully." : "Failed to delete product or product not found.";
-                                         responseBase.Data = null; // Không cần trả về dữ liệu sau khi xóa
-                                     }
-                                     catch (Exception ex)
-                                     {
-                                         responseBase.Success = false;
-                                         responseBase.Message = $"Error deleting product: {ex.Message}";
-                                         responseBase.Data = null;
-                                     }
-                                     break;*/
+                                        // Gọi service để cập nhật tên file ảnh trong DB
+                                        productService.UpdateProductImageFilename(productId, fileName);
 
+                                        responseBase.Success = true;
+                                        responseBase.Message = "Product image filename updated successfully.";
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        responseBase.Success = false;
+                                        responseBase.Message = $"Error updating product image filename: {ex.Message}";
+                                    }
+                                    break;
                                 case "BulkAddProducts":
                                     // Giữ nguyên logic của bạn, nhưng thêm try-catch ở mức cao hơn để đảm bảo không crash
                                     try

@@ -342,7 +342,18 @@ namespace ElectronicsStore.Client
         {
             return await SendRequest<string, List<OrderDTO>>("SearchOrder", id);
         }
+        public async Task<bool> UpdateProductImageFilename(int productId, string fileName)
+        {
+            // Tạo một anonymous object hoặc một DTO để đóng gói dữ liệu
+            var payload = new
+            {
+                ProductId = productId,
+                FileName = fileName
+            };
 
+            // Gửi request tới server, mong đợi server trả về một giá trị boolean
+            return await SendRequest<object, bool>("UpdateProductImageFilename", payload);
+        }
         public async Task<ProductDTO> GetProductByIdAsync(int productId)
         {
             return await SendRequest<int, ProductDTO>("GetProductById", productId);
