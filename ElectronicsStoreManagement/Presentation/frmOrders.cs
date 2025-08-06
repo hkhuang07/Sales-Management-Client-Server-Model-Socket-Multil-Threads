@@ -26,6 +26,14 @@ namespace ElectronicsStore.Presentation
         string serverIp = ConfigurationManager.AppSettings["ServerIp"] ?? "127.0.0.1"; // Default to localhost if not found
         int port = int.Parse(ConfigurationManager.AppSettings["ServerPort"] ?? "301"); // Default port
 
+        public frmOrders(ClientService clientService, int userID)
+        {
+            _clientService = clientService;
+            EmployeeID = userID; // Assuming you want to use this userID for some operations
+            InitializeComponent();
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "orders.html";
+        }
         /*public frmOrders(ClientService clientService)
         {
              _clientService = clientService;
@@ -33,17 +41,11 @@ namespace ElectronicsStore.Presentation
              string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
              helpProvider1.HelpNamespace = helpURL + "orders.html";
         }*/
-        public frmOrders(ClientService clientService, int userID)
-        {
-            _clientService = clientService;
-            InitializeComponent();
-            EmployeeID = userID; // Assuming you want to use this userID for some operations
-            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
-            helpProvider1.HelpNamespace = helpURL + "orders.html";
-        }
+
         /*public frmOrders()
          {
              _clientService = new ClientService("127.0.0.1", 301);
+             EmployeeID = 4; // Assuming you want to use this userID for some operations
              InitializeComponent();
              string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
              helpProvider1.HelpNamespace = helpURL + "orders.html";

@@ -28,15 +28,7 @@ namespace ElectronicsStore.Presentation
 
         public readonly ClientService _clientService;
 
-        public frmSale(ClientService clientService)
-        {
-            _clientService = clientService;
-            InitializeComponent();
-            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
-            helpProvider1.HelpNamespace = helpURL + "sale.html";
-        }
-
-        public frmSale(ClientService clientService,int userID)
+        public frmSale(ClientService clientService, int userID)
         {
             _clientService = clientService;
             InitializeComponent();
@@ -44,13 +36,23 @@ namespace ElectronicsStore.Presentation
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
             helpProvider1.HelpNamespace = helpURL + "sale.html";
         }
-        public frmSale()
+
+        /*public frmSale(ClientService clientService)
+        {
+            _clientService = clientService;
+            InitializeComponent();
+            string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
+            helpProvider1.HelpNamespace = helpURL + "sale.html";
+        }*/
+
+
+        /*public frmSale()
         {
             _clientService = new ClientService("127.0.0.1", 301);
             InitializeComponent();
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]!.ToString();
             helpProvider1.HelpNamespace = helpURL + "sale.html";
-        }
+        }*/
 
 
         // Product and Order Loading
@@ -623,7 +625,7 @@ namespace ElectronicsStore.Presentation
             if (dgvOrder.CurrentRow != null)
             {
                 // Ensure "OrderIDColumn" matches the DataPropertyName or Name of your Order ID column in dgvOrder
-                int selectedOrderId = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderIDColumn"].Value);
+                int selectedOrderId = Convert.ToInt32(dgvOrder.CurrentRow.Cells["OrderID"].Value);
                 await LoadOrderDetailsAsync(selectedOrderId); // Await the async method
                 currentOrderID = selectedOrderId;
             }

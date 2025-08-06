@@ -27,7 +27,6 @@ namespace ElectronicsStore.Presentation
         frmCustomers customers = null;
         frmEmployees employees = null;
         frmOrders orders = null;
-        // frmOrderDetails orderDetails = null; // This form is usually for details of a single order, often opened from frmOrders, so it might not need to be a direct MDI child of frmMain unless your design dictates it.
         frmProductStatistics productStatistics = null;
         frmRevenueStatistics revenueStatistics = null;
         AboutBox about = null;
@@ -61,6 +60,8 @@ namespace ElectronicsStore.Presentation
 
         private async void frmMain_Load(object sender, EventArgs e)
         {
+            sale?.Close(); // Close the sale form if it's open
+
             NotLoggedIn();
             await LogIn(); // Chờ LogIn hoàn thành
         }
@@ -366,8 +367,8 @@ namespace ElectronicsStore.Presentation
                     if (loginResponse != null)
                     {
                         employeeName = loginResponse.FullName;
-                        var user = _clientService.GetEmployeeByNameAsync(loginResponse.FullName); // Assuming GetUserById fetches user details by ID
-                        userID = user.Id;
+                        EmployeeDTO user = await _clientService.GetEmployeeByNameAsync(loginResponse.FullName); // Assuming GetUserById fetches user details by ID
+                        userID = user.ID;
                         currentEmployeeRole = loginResponse.Roles;
 
                         isAuthenticated = true;
@@ -395,7 +396,7 @@ namespace ElectronicsStore.Presentation
                 else
                 {
                     logIn.Dispose();
-                    Application.Exit();
+                    //Application.Exit();
                     return;
                 }
             }
@@ -407,13 +408,16 @@ namespace ElectronicsStore.Presentation
             mnuLogIn.Enabled = true;
             btnLogin.Enabled = true;
 
+
+            managementToolStripMenuItem.Visible = false;
+            orderToolStripMenuItem.Visible = false;
+            reportStatisticToolStripMenuItem.Visible = false;
+
             // Disable all other menu items and buttons
             mnuLogout.Enabled = false;
             mnuChangePass.Enabled = false;
             mnuData.Enabled = false;
-            mnuSale.Enabled = false;
-            managementToolStripMenuItem.Enabled = false;
-            reportStatisticToolStripMenuItem.Enabled = false;
+            //mnuSale.Enabled = false;
             mnuCategories.Enabled = false;
             mnuManufacturers.Enabled = false;
             mnuProducts.Enabled = false;
@@ -422,13 +426,16 @@ namespace ElectronicsStore.Presentation
             mnuOrders.Enabled = false;
             mnuProductStatistics.Enabled = false;
             mnuRevenueStatistics.Enabled = false;
+            reportStatisticToolStripMenuItem.Enabled = false;
 
+
+            TabBar.Enabled = false;
             tabLogin.Enabled = true;
             tabLogout.Enabled = false;
             tabChangepass.Enabled = false;
             tabRestore.Enabled = false;
             tabBackup.Enabled = false;
-            tabSale.Enabled = false;
+            //tabSale.Enabled = false;
             tabManagement.Enabled = false;
             tabReportStatistics.Enabled = false;
             tabCategories.Enabled = false;
@@ -444,8 +451,7 @@ namespace ElectronicsStore.Presentation
             btnChangePass.Enabled = false;
             btnRestore.Enabled = false;
             btnBackup.Enabled = false;
-            btnSale.Enabled = false;
-            btnSales.Enabled = false;
+            //btnSale.Enabled = false;
             btnCategories.Enabled = false;
             btnManufacturers.Enabled = false;
             btnProducts.Enabled = false;
@@ -464,6 +470,10 @@ namespace ElectronicsStore.Presentation
             // Disable login
             mnuLogIn.Enabled = false;
             btnLogin.Enabled = false;
+
+            managementToolStripMenuItem.Visible = true;
+            orderToolStripMenuItem.Visible = true;
+            reportStatisticToolStripMenuItem.Visible = true;
 
             // Enable all admin-specific menu items and buttons
             mnuLogout.Enabled = true;
@@ -486,7 +496,7 @@ namespace ElectronicsStore.Presentation
             tabChangepass.Enabled = true;
             tabRestore.Enabled = true;
             tabBackup.Enabled = true;
-            tabSale.Enabled = true;
+            TabBar.Enabled = true;
             tabManagement.Enabled = true;
             tabReportStatistics.Enabled = true;
             tabCategories.Enabled = true;
@@ -502,8 +512,8 @@ namespace ElectronicsStore.Presentation
             btnChangePass.Enabled = true;
             btnRestore.Enabled = true;
             btnBackup.Enabled = true;
+            tabSale.Enabled = true;
             btnSale.Enabled = true;
-            btnSales.Enabled = true;
             btnCategories.Enabled = true;
             btnManufacturers.Enabled = true;
             btnProducts.Enabled = true;
@@ -522,6 +532,9 @@ namespace ElectronicsStore.Presentation
             // Disable login
             mnuLogIn.Enabled = false;
             btnLogin.Enabled = false;
+
+            managementToolStripMenuItem.Visible = true;
+            orderToolStripMenuItem.Visible = true;
 
             // Enable staff-specific menu items and buttons, disable admin-only ones
             mnuLogout.Enabled = true;
@@ -546,7 +559,7 @@ namespace ElectronicsStore.Presentation
             tabChangepass.Enabled = true;
             tabRestore.Enabled = false; // Staff typically doesn't do backup/restore
             tabBackup.Enabled = false;
-            tabSale.Enabled = true;
+            TabBar.Enabled = true;
             tabManagement.Enabled = true;
             tabCategories.Enabled = false;
             tabManufacturer.Enabled = false;
@@ -562,8 +575,8 @@ namespace ElectronicsStore.Presentation
             btnChangePass.Enabled = true;
             btnRestore.Enabled = false;
             btnBackup.Enabled = false;
+            tabSale.Enabled = true;
             btnSale.Enabled = true;
-            btnSales.Enabled = true;
             btnCategories.Enabled = false;
             btnManufacturers.Enabled = false;
             btnProducts.Enabled = true;

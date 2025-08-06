@@ -61,7 +61,7 @@
             helpProvider1 = new HelpProvider();
             Order = new TabPage();
             panel16 = new Panel();
-            btnSale = new Button();
+            tabSale = new Button();
             pictureBox15 = new PictureBox();
             tabHelp = new TabPage();
             panel1 = new Panel();
@@ -115,7 +115,7 @@
             panel3 = new Panel();
             tabLogin = new Button();
             pictureBox3 = new PictureBox();
-            tabSale = new TabControl();
+            TabBar = new TabControl();
             label1 = new Label();
             label8 = new Label();
             btnLogin = new Button();
@@ -139,7 +139,7 @@
             btnManufacturers = new Button();
             btnCategories = new Button();
             label18 = new Label();
-            btnSales = new Button();
+            btnSale = new Button();
             label2 = new Label();
             statusStrip1.SuspendLayout();
             menuStrip1.SuspendLayout();
@@ -182,7 +182,7 @@
             ((System.ComponentModel.ISupportInitialize)pictureBox4).BeginInit();
             panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
-            tabSale.SuspendLayout();
+            TabBar.SuspendLayout();
             panel7.SuspendLayout();
             SuspendLayout();
             // 
@@ -321,7 +321,7 @@
             mnuCategories.ForeColor = Color.MidnightBlue;
             mnuCategories.Image = (Image)resources.GetObject("mnuCategories.Image");
             mnuCategories.Name = "mnuCategories";
-            mnuCategories.Size = new Size(166, 22);
+            mnuCategories.Size = new Size(180, 22);
             mnuCategories.Text = "&Categories";
             mnuCategories.Click += mnuCategories_Click;
             // 
@@ -331,7 +331,7 @@
             mnuManufacturers.ForeColor = Color.MidnightBlue;
             mnuManufacturers.Image = (Image)resources.GetObject("mnuManufacturers.Image");
             mnuManufacturers.Name = "mnuManufacturers";
-            mnuManufacturers.Size = new Size(166, 22);
+            mnuManufacturers.Size = new Size(180, 22);
             mnuManufacturers.Text = "&Manufacturers";
             mnuManufacturers.Click += mnuManufacturers_Click;
             // 
@@ -341,7 +341,7 @@
             mnuProducts.ForeColor = Color.MidnightBlue;
             mnuProducts.Image = (Image)resources.GetObject("mnuProducts.Image");
             mnuProducts.Name = "mnuProducts";
-            mnuProducts.Size = new Size(166, 22);
+            mnuProducts.Size = new Size(180, 22);
             mnuProducts.Text = "&Products";
             mnuProducts.Click += mnuProducts_Click;
             // 
@@ -351,7 +351,7 @@
             mnuOrders.ForeColor = Color.MidnightBlue;
             mnuOrders.Image = (Image)resources.GetObject("mnuOrders.Image");
             mnuOrders.Name = "mnuOrders";
-            mnuOrders.Size = new Size(166, 22);
+            mnuOrders.Size = new Size(180, 22);
             mnuOrders.Text = "&Orders";
             mnuOrders.Click += mnuOrders_Click;
             // 
@@ -361,7 +361,7 @@
             mnuCustomers.ForeColor = Color.MidnightBlue;
             mnuCustomers.Image = (Image)resources.GetObject("mnuCustomers.Image");
             mnuCustomers.Name = "mnuCustomers";
-            mnuCustomers.Size = new Size(166, 22);
+            mnuCustomers.Size = new Size(180, 22);
             mnuCustomers.Text = "C&ustomers";
             mnuCustomers.Click += mnuCustomers_Click;
             // 
@@ -371,7 +371,7 @@
             mnuEmployees.ForeColor = Color.MidnightBlue;
             mnuEmployees.Image = (Image)resources.GetObject("mnuEmployees.Image");
             mnuEmployees.Name = "mnuEmployees";
-            mnuEmployees.Size = new Size(166, 22);
+            mnuEmployees.Size = new Size(180, 22);
             mnuEmployees.Text = "&Employees";
             mnuEmployees.Click += mnuEmployees_Click;
             // 
@@ -482,7 +482,7 @@
             // panel16
             // 
             panel16.BackColor = Color.RoyalBlue;
-            panel16.Controls.Add(btnSale);
+            panel16.Controls.Add(tabSale);
             panel16.Controls.Add(pictureBox15);
             panel16.Dock = DockStyle.Left;
             panel16.Location = new Point(3, 3);
@@ -490,20 +490,20 @@
             panel16.Size = new Size(89, 98);
             panel16.TabIndex = 15;
             // 
-            // btnSale
+            // tabSale
             // 
-            btnSale.BackColor = Color.RoyalBlue;
-            btnSale.Dock = DockStyle.Fill;
-            btnSale.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnSale.ForeColor = Color.AliceBlue;
-            btnSale.Location = new Point(0, 72);
-            btnSale.Margin = new Padding(1);
-            btnSale.Name = "btnSale";
-            btnSale.Size = new Size(89, 26);
-            btnSale.TabIndex = 2;
-            btnSale.Text = "Sale";
-            btnSale.UseVisualStyleBackColor = false;
-            btnSale.Click += mnuSale_Click;
+            tabSale.BackColor = Color.RoyalBlue;
+            tabSale.Dock = DockStyle.Fill;
+            tabSale.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            tabSale.ForeColor = Color.AliceBlue;
+            tabSale.Location = new Point(0, 72);
+            tabSale.Margin = new Padding(1);
+            tabSale.Name = "tabSale";
+            tabSale.Size = new Size(89, 26);
+            tabSale.TabIndex = 2;
+            tabSale.Text = "Sale";
+            tabSale.UseVisualStyleBackColor = false;
+            tabSale.Click += mnuSale_Click;
             // 
             // pictureBox15
             // 
@@ -1181,20 +1181,20 @@
             pictureBox3.TabIndex = 1;
             pictureBox3.TabStop = false;
             // 
-            // tabSale
+            // TabBar
             // 
-            tabSale.Controls.Add(tabSystem);
-            tabSale.Controls.Add(Order);
-            tabSale.Controls.Add(tabManagement);
-            tabSale.Controls.Add(tabReportStatistics);
-            tabSale.Controls.Add(tabHelp);
-            tabSale.Dock = DockStyle.Top;
-            tabSale.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            tabSale.Location = new Point(0, 28);
-            tabSale.Name = "tabSale";
-            tabSale.SelectedIndex = 0;
-            tabSale.Size = new Size(984, 134);
-            tabSale.TabIndex = 1;
+            TabBar.Controls.Add(tabSystem);
+            TabBar.Controls.Add(Order);
+            TabBar.Controls.Add(tabManagement);
+            TabBar.Controls.Add(tabReportStatistics);
+            TabBar.Controls.Add(tabHelp);
+            TabBar.Dock = DockStyle.Top;
+            TabBar.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            TabBar.Location = new Point(0, 28);
+            TabBar.Name = "TabBar";
+            TabBar.SelectedIndex = 0;
+            TabBar.Size = new Size(984, 134);
+            TabBar.TabIndex = 1;
             // 
             // label1
             // 
@@ -1326,7 +1326,7 @@
             panel7.Controls.Add(btnManufacturers);
             panel7.Controls.Add(btnCategories);
             panel7.Controls.Add(label18);
-            panel7.Controls.Add(btnSales);
+            panel7.Controls.Add(btnSale);
             panel7.Controls.Add(label2);
             panel7.Controls.Add(btnRestore);
             panel7.Controls.Add(btnBackup);
@@ -1519,19 +1519,19 @@
             label18.TabIndex = 59;
             label18.Text = "Management";
             // 
-            // btnSales
+            // btnSale
             // 
-            btnSales.BackColor = Color.RoyalBlue;
-            btnSales.Dock = DockStyle.Top;
-            btnSales.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
-            btnSales.ForeColor = Color.AliceBlue;
-            btnSales.Location = new Point(0, 276);
-            btnSales.Name = "btnSales";
-            btnSales.Size = new Size(159, 39);
-            btnSales.TabIndex = 56;
-            btnSales.Text = "Sale";
-            btnSales.UseVisualStyleBackColor = false;
-            btnSales.ClientSizeChanged += mnuSale_Click;
+            btnSale.BackColor = Color.RoyalBlue;
+            btnSale.Dock = DockStyle.Top;
+            btnSale.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
+            btnSale.ForeColor = Color.AliceBlue;
+            btnSale.Location = new Point(0, 276);
+            btnSale.Name = "btnSale";
+            btnSale.Size = new Size(159, 39);
+            btnSale.TabIndex = 56;
+            btnSale.Text = "Sale";
+            btnSale.UseVisualStyleBackColor = false;
+            btnSale.ClientSizeChanged += mnuSale_Click;
             // 
             // label2
             // 
@@ -1551,7 +1551,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(984, 561);
             Controls.Add(panel7);
-            Controls.Add(tabSale);
+            Controls.Add(TabBar);
             Controls.Add(statusStrip1);
             Controls.Add(menuStrip1);
             ForeColor = Color.MidnightBlue;
@@ -1607,7 +1607,7 @@
             ((System.ComponentModel.ISupportInitialize)pictureBox4).EndInit();
             panel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)pictureBox3).EndInit();
-            tabSale.ResumeLayout(false);
+            TabBar.ResumeLayout(false);
             panel7.ResumeLayout(false);
             panel7.PerformLayout();
             ResumeLayout(false);
@@ -1688,9 +1688,9 @@
         private Panel panel3;
         private Button tabLogin;
         private PictureBox pictureBox3;
-        private TabControl tabSale;
+        private TabControl TabBar;
         private Panel panel16;
-        private Button btnSale;
+        private Button tabSale;
         private PictureBox pictureBox15;
         private ToolStripMenuItem mnuExit;
         private ToolStripMenuItem mnuData;
@@ -1717,7 +1717,7 @@
         private Button btnManufacturers;
         private Button btnCategories;
         private Label label18;
-        private Button btnSales;
+        private Button btnSale;
         private Label label2;
         private Panel panel18;
         private Button button4;

@@ -517,7 +517,7 @@ namespace ElectronicsStore.Server
 
                                 case "GetEmployeeByName":
                                     string key = requestBase.Data.ToString();
-                                    var employeeobj = employeeService.GetByName(key);
+                                    EmployeeDTO employeeobj = employeeService.GetByName(key);
                                     responseBase.Success = true;
                                     responseBase.Message = "Employees filtered successfully.";
                                     responseBase.Data = employeeobj;

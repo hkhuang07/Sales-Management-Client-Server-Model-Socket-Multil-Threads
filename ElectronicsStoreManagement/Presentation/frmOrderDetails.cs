@@ -35,14 +35,13 @@ namespace ElectronicsStore.Presentation
             string helpURL = ConfigurationManager.AppSettings["HelpURL"]?.ToString();
             helpProvider1.HelpNamespace = helpURL + "orderdetails.html"; // Fixed typo in "orderdetails"
         }*/
-        public frmOrderDetails(ClientService clientSercive, int orderID = 0,int userID = 0)
+        public frmOrderDetails(ClientService clientSercive, int orderID,int userID)
         {
 
             // Initialize ClientService
-            //_clientService = new ClientService(ConfigurationManager.AppSettings["ServerIp"], int.Parse(ConfigurationManager.AppSettings["ServerPort"]));
             _clientService = clientSercive;
             OrderID = orderID;
-            EmployeeID = userID; // Set EmployeeID from the parameter
+            EmployeeID = userID; 
 
             InitializeComponent();
     
@@ -52,7 +51,7 @@ namespace ElectronicsStore.Presentation
 
         private async Task LoadData()
         {
-            // Load Employees
+            /*/ Load Employees
             try
             {
                 if (EmployeeID > 0)
@@ -64,18 +63,18 @@ namespace ElectronicsStore.Presentation
                         cboEmployee.DataSource = employeeList;
                         cboEmployee.DisplayMember = "FullName";
                         cboEmployee.ValueMember = "ID";
-                        cboEmployee.SelectedValue = EmployeeID;
+                        //cboEmployee.SelectedValue = EmployeeID;
                     }
                     else
                     {
-                        // Nếu EmployeeID không hợp lệ, tải toàn bộ danh sách nhân viên
-                        var employees = await _clientService.GetAllEmployeesAsync();
-                        if (employees != null)
-                        {
-                            cboEmployee.DataSource = employees;
-                            cboEmployee.DisplayMember = "FullName";
-                            cboEmployee.ValueMember = "ID";
-                        }
+                      
+                    }
+                    var employees = await _clientService.GetAllEmployeesAsync();
+                    if (employees != null)
+                    {
+                        cboEmployee.DataSource = employees;
+                        cboEmployee.DisplayMember = "FullName";
+                        cboEmployee.ValueMember = "ID";
                     }
                 }
                 else
@@ -107,7 +106,7 @@ namespace ElectronicsStore.Presentation
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading customers: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            }*/
 
             // Load Products
             try
@@ -122,28 +121,18 @@ namespace ElectronicsStore.Presentation
                 MessageBox.Show($"Error loading products: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
-            if (EmployeeID != 0 && cboEmployee.Items.Cast<EmployeeDTO>().Any(e => e.ID == EmployeeID))
-                cboEmployee.SelectedValue = EmployeeID;
-            else
-                cboEmployee.SelectedIndex = -1; // Ensure no selection if EmployeeID is not found
-
-            if (CustomerID != 0 && cboCustomer.Items.Cast<CustomerDTO>().Any(c => c.ID == CustomerID))
-                cboCustomer.SelectedValue = CustomerID;
-            else
-                cboCustomer.SelectedIndex = -1; // Ensure no selection if CustomerID is not found
-            
         }
 
         public void EnableControls()
         {
             if (OrderID == 0 && orderDetails.Count == 0) // Add mode and no details added yet
             {
-                cboCustomer.SelectedIndex = -1;
-                cboEmployee.SelectedIndex = -1;
-                cboProduct.SelectedIndex = -1;
+                cboProduct.SelectedIndex = -1; 
                 numQuantity.Value = 1;
                 numPrice.Value = 0;
             }
+            cboCustomer.Enabled = OrderID == 0; // Enable customer selection only when creating a new order
+            cboEmployee.Enabled = false; // Always disable employee selection
 
             btnSave.Enabled = orderDetails.Count > 0; // Check orderDetails collection, not DataGridView rows
             btnDelete.Enabled = dataGridView.SelectedRows.Count > 0; // Enable delete only if a row is selected
@@ -162,11 +151,26 @@ namespace ElectronicsStore.Presentation
                     var order = await _clientService.GetOrderByIdAsync(OrderID);
                     if (order != null)
                     {
-                        cboEmployee.SelectedValue = order.EmployeeID;
-                        cboCustomer.SelectedValue = order.CustomerID;
+                        var employee = await _clientService.GetEmployeeByIdAsync(EmployeeID);
+                        if (employee != null)
+                        {
+                            var employeeList = new List<EmployeeDTO> { employee };
+                            cboEmployee.DataSource = employeeList;
+                            cboEmployee.DisplayMember = "FullName";
+                            cboEmployee.ValueMember = "ID";
+                        }
+                        var customer = await _clientService.GetCustomerByIdAsync(order.CustomerID);
+                        if (customer != null)
+                        {
+                            var customerList = new List<CustomerDTO> { customer };
+                            cboCustomer.DataSource = customerList;
+                            cboCustomer.DisplayMember = "CustomerName";
+                            cboCustomer.ValueMember = "ID";
+                        }
+
+
                         txtNote.Text = order.Note;
-                        cboStatus.Text = order.Status ?? ""; // Default to "Pending" if Status is null
-                        //dtpOrderDate.Value = order.Date; // Assuming you have a DateTimePicker for order date
+                        cboStatus.Text = order.Status ?? ""; 
 
                         // Get Order Details
                         var details = await _clientService.GetOrderDetailsByOrderIdAsync(OrderID);
@@ -201,8 +205,33 @@ namespace ElectronicsStore.Presentation
             }
             else
             {
-                orderDetails = new BindingList<OrderDetailsDTO>();
-                //dtpOrderDate.Value = DateTime.Now; // Set current date for new order
+                try
+                {
+                    OrderDTO order = new OrderDTO();
+                    var employee = await _clientService.GetEmployeeByIdAsync(EmployeeID);
+                    if (employee != null)
+                    {
+                        var employeeList = new List<EmployeeDTO> { employee };
+                        cboEmployee.DataSource = employeeList;
+                        cboEmployee.DisplayMember = "FullName";
+                        cboEmployee.ValueMember = "ID";
+                    }
+                    // Load Customers
+                    cboCustomer.Enabled = true;
+                    var customers = await _clientService.GetAllCustomersAsync();
+                    cboCustomer.DataSource = customers;
+                    cboCustomer.DisplayMember = "CustomerName";
+                    cboCustomer.ValueMember = "ID";
+
+                    txtNote.Clear(); // Clear note for new order
+                    cboStatus.Text = order.Status ?? "Pending"; // Default to "Pending" if Status is null
+                    orderDetails = new BindingList<OrderDetailsDTO>();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error loading order or details: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    orderDetails = new BindingList<OrderDetailsDTO>(); // Initialize empty
+                }
             }
 
             dataGridView.DataSource = orderDetails;
@@ -215,7 +244,7 @@ namespace ElectronicsStore.Presentation
             if (dataGridView.CurrentRow == null || dataGridView.CurrentRow.DataBoundItem == null)
             {
                 // Clear controls if no row is selected
-                cboProduct.SelectedIndex = -1;
+                //cboProduct.SelectedIndex = -1;
                 numQuantity.Value = 1;
                 numPrice.Value = 0;
                 btnDelete.Enabled = false; // Disable delete if nothing is selected
@@ -417,9 +446,6 @@ namespace ElectronicsStore.Presentation
             }
             finally
             {
-                // Đảm bảo UI trở lại trạng thái bình thường (nếu bạn đã enable/disable các control)
-                // Cursor.Current = Cursors.Default;
-                // btnSave.Enabled = true;
                 btnSave.Enabled = true;
             }
 
