@@ -72,7 +72,7 @@ Managing the core stakeholders of the business.
 </p>
 <p align="center">
   <h3>Server & Client Employees </h3>
-  <img src="demo/video/employee.gif" alt="Server-Client Employees">
+  <img src="demo/video/employees.gif" alt="Server-Client Employees">
   <p><em> The employee management interface for admins.</em></p>
 </p>
 
