@@ -321,7 +321,7 @@
             mnuCategories.ForeColor = Color.MidnightBlue;
             mnuCategories.Image = (Image)resources.GetObject("mnuCategories.Image");
             mnuCategories.Name = "mnuCategories";
-            mnuCategories.Size = new Size(180, 22);
+            mnuCategories.Size = new Size(166, 22);
             mnuCategories.Text = "&Categories";
             mnuCategories.Click += mnuCategories_Click;
             // 
@@ -331,7 +331,7 @@
             mnuManufacturers.ForeColor = Color.MidnightBlue;
             mnuManufacturers.Image = (Image)resources.GetObject("mnuManufacturers.Image");
             mnuManufacturers.Name = "mnuManufacturers";
-            mnuManufacturers.Size = new Size(180, 22);
+            mnuManufacturers.Size = new Size(166, 22);
             mnuManufacturers.Text = "&Manufacturers";
             mnuManufacturers.Click += mnuManufacturers_Click;
             // 
@@ -341,7 +341,7 @@
             mnuProducts.ForeColor = Color.MidnightBlue;
             mnuProducts.Image = (Image)resources.GetObject("mnuProducts.Image");
             mnuProducts.Name = "mnuProducts";
-            mnuProducts.Size = new Size(180, 22);
+            mnuProducts.Size = new Size(166, 22);
             mnuProducts.Text = "&Products";
             mnuProducts.Click += mnuProducts_Click;
             // 
@@ -351,7 +351,7 @@
             mnuOrders.ForeColor = Color.MidnightBlue;
             mnuOrders.Image = (Image)resources.GetObject("mnuOrders.Image");
             mnuOrders.Name = "mnuOrders";
-            mnuOrders.Size = new Size(180, 22);
+            mnuOrders.Size = new Size(166, 22);
             mnuOrders.Text = "&Orders";
             mnuOrders.Click += mnuOrders_Click;
             // 
@@ -361,7 +361,7 @@
             mnuCustomers.ForeColor = Color.MidnightBlue;
             mnuCustomers.Image = (Image)resources.GetObject("mnuCustomers.Image");
             mnuCustomers.Name = "mnuCustomers";
-            mnuCustomers.Size = new Size(180, 22);
+            mnuCustomers.Size = new Size(166, 22);
             mnuCustomers.Text = "C&ustomers";
             mnuCustomers.Click += mnuCustomers_Click;
             // 
@@ -371,7 +371,7 @@
             mnuEmployees.ForeColor = Color.MidnightBlue;
             mnuEmployees.Image = (Image)resources.GetObject("mnuEmployees.Image");
             mnuEmployees.Name = "mnuEmployees";
-            mnuEmployees.Size = new Size(180, 22);
+            mnuEmployees.Size = new Size(166, 22);
             mnuEmployees.Text = "&Employees";
             mnuEmployees.Click += mnuEmployees_Click;
             // 

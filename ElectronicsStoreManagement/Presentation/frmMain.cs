@@ -417,7 +417,7 @@ namespace ElectronicsStore.Presentation
             mnuLogout.Enabled = false;
             mnuChangePass.Enabled = false;
             mnuData.Enabled = false;
-            //mnuSale.Enabled = false;
+            mnuSale.Enabled = false;
             mnuCategories.Enabled = false;
             mnuManufacturers.Enabled = false;
             mnuProducts.Enabled = false;
@@ -435,7 +435,7 @@ namespace ElectronicsStore.Presentation
             tabChangepass.Enabled = false;
             tabRestore.Enabled = false;
             tabBackup.Enabled = false;
-            //tabSale.Enabled = false;
+            tabSale.Enabled = false;
             tabManagement.Enabled = false;
             tabReportStatistics.Enabled = false;
             tabCategories.Enabled = false;
@@ -451,7 +451,7 @@ namespace ElectronicsStore.Presentation
             btnChangePass.Enabled = false;
             btnRestore.Enabled = false;
             btnBackup.Enabled = false;
-            //btnSale.Enabled = false;
+            btnSale.Enabled = false;
             btnCategories.Enabled = false;
             btnManufacturers.Enabled = false;
             btnProducts.Enabled = false;
