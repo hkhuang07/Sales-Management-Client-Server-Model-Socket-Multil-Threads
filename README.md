@@ -1,4 +1,5 @@
-# 🚀 Sales Management System - Client-Server Model (4 Layer Client-Server-Business Logic-Data Access), Unit of Work Model, NewtonJSON - TCP/Socket/Mutil Threads Process 📈
+# 🚀 Sales Management System - Client-Server Model (4 Layer Client-Server-Business Logic-Data Access)
+# Unit of Work Model, NewtonJSON - TCP/Socket/Mutil Threads Process 📈
 
 ## Project Overview
 
