@@ -198,10 +198,8 @@ cd Electronic-Store-NET-Winform-Socket-MultilThreads
    ```bash
    dotnet run --project src/Presentation/ElectronicsStore.Client.csproj
    ```
-   - Log in using default seed credentials (passwords are strictly verified via BCrypt hashing):
-     - **Admin**: Username `linsirui` | Password `1111111111`
-     - **Staff**: Username `huynhquochuy` | Password `0000000000`
 
+     
 ---
 
 ## 👤 Author & License
