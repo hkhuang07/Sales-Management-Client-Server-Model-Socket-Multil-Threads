@@ -1,259 +1,213 @@
-# 🚀 Sales Management System - Client-Server Model (4 Layer Client-Server-Business Logic-Data Access)
-# Unit of Work Model, NewtonJSON - TCP/Socket/Mutil Threads Process 📈
+# 🛒 Electronic Store Management System - Client-Server Architecture ⚡
 
-## Project Overview
-
-Welcome to the **Sales Management System**! This repository presents an exceptionally powerful and meticulously engineered solution, specifically crafted to meet the demanding needs of modern electronics stores. Far beyond a simple application, this system is a testament to sophisticated software design, built on a robust **Client-Server architecture** that ensures reliability, scalability, and high performance.
-
-<p align="center">
-  <h3>Sales Process </h3>
-  <img src="demo/video/process.gif" alt="Server-Client Sales Process">
-  <p><em> Server Console & Client Sales Process Interface.</em></p>
-</p>
-
-### Server & Client Overview
-A look at the core interfaces for both the server console and the client application.
-
-<p align="center">
-  <h3>Server & Client Overview </h3>
-  <img src="demo/server00.jpg" alt="Server Console">
-  <img src="demo/server.jpg" alt="Server Console">
-  <img src="demo/client.jpg" alt="Client Interface">
-  <p><em> A quick glimpse of the Server Console and the Client's Main Interface.</em></p>
-</p>
-
-Our core design principle focuses on handling concurrent operations with unmatched efficiency, made possible through advanced **multi-threading**. The system adheres strictly to a clean and maintainable **4-Layer Architecture (Client -> Server -> Business Logic -> Data Access)**, which provides a clear separation of concerns, simplifies maintenance, and guarantees rock-solid data integrity. For data persistence, we leverage the power of **.NET Entity Framework Core** and **SQL Server**, forming a solid foundation for all data operations.
-
-This introduction provides a comprehensive and detailed look into the technologies and architectural patterns that make this project a premier example of modern application development.
-### Sales Process Flow
-This GIF illustrates the seamless flow of data from the client's sales interface to the server console, showcasing the real-time processing of sales transactions.
+> **High-Performance C# .NET WinForms & TCP Socket Multi-Threaded System**  
+> Built with 4-Layer Clean Architecture, Unit of Work & Repository Patterns, EF Core & SQL Server.
 
 ---
+
+## 📌 Project Overview
+
+Welcome to the **Electronic Store Management System**! This repository presents a modern, production-grade enterprise software solution tailored specifically for electronic store retail and inventory management. 
+
+Beyond a standard desktop application, this system implements an event-driven **Client-Server architecture** communicating over raw **TCP Sockets with Multi-threading**, ensuring ultra-fast response times, concurrent user handling, data integrity, and high operational reliability.
+
+---
+
+## 🎬 System Demos & Visual Showcase
+
+### 1. POS Sales & Transaction Process
+Real-time interaction between Client POS interface and Server backend console.
+
+<p align="center">
+  <img src="demo/video/process.gif" alt="Server-Client Sales Process" width="85%">
+  <br><em>Real-Time POS Sales Processing Flow</em>
+</p>
+
+### 2. Server Console & Client Dashboard
+<p align="center">
+  <img src="demo/server00.jpg" alt="Server Console Initialization" width="45%">
+  <img src="demo/server.jpg" alt="Server Listening Output" width="45%">
+  <br>
+  <img src="demo/client.jpg" alt="Client Main Dashboard" width="85%">
+  <br><em>Server Control Console & Client Main Interface Overview</em>
+</p>
+
+---
+
 ## 📸 Media Gallery & Feature Showcase
 
-This section provides a dynamic visual walkthrough of the system's key functionalities.
-
-### Secure Authentication
-This demonstrates the robust authentication process for both staff and administrators, highlighting the server's role in validating credentials.
+### 🔐 Secure Authentication & Role-Based Access
+Strict authentication mechanism separating standard employees from system administrators.
 
 <p align="center">
-  <h3>Server & Client Authentication </h3>
-  <img src="demo/video/auth_user.gif" alt="Server-Client Authentication">
-  <p><em> Authentication process for standard users/employees.</em></p>
-  <img src="demo/video/auth_admin.gif" alt="Server-Client Authentication">
-  <p><em> Authentication process for administrators, showcasing elevated access rights.</em></p>
+  <img src="demo/video/auth_user.gif" alt="Employee Authentication" width="48%">
+  <img src="demo/video/auth_admin.gif" alt="Admin Authentication" width="48%">
+  <br><em>Staff Authentication (Left) vs Administrator Privileged Authentication (Right)</em>
 </p>
 
-### Inventory Management
-A series of visual demonstrations highlighting the CRUD operations for key data entities.
+### 📦 Inventory & Catalog Management
+Full CRUD control over Product Categories, Manufacturers, and Product Items.
 
 <p align="center">
-  <h3>Server & Client Categories </h3>
-  <img src="demo/video/categories.gif" alt="Server-Client Categories">
-  <p><em> Managing product categories in real-time.</em></p>
+  <b>Category Management</b><br>
+  <img src="demo/video/categories.gif" alt="Category Management" width="75%">
 </p>
 <p align="center">
-  <h3>Server & Client Manufacturer </h3>
-  <img src="demo/video/manufacturers.gif" alt="Server-Client Manufacturer">
-  <p><em> Handling manufacturer information across the system.</em></p>
+  <b>Manufacturer Directory</b><br>
+  <img src="demo/video/manufacturers.gif" alt="Manufacturer Management" width="75%">
 </p>
 <p align="center">
-  <h3>Server & Client Products </h3>
-  <img src="demo/video/products.gif" alt="Server-Client Products">
-  <p><em> A detailed view of product management functionalities.</em></p>
+  <b>Product Catalog & Stock Management</b><br>
+  <img src="demo/video/products.gif" alt="Product Management" width="75%">
 </p>
 
-### Customer & Employee Records
-Managing the core stakeholders of the business.
+### 👥 Customer & Employee Stakeholder Records
+<p align="center">
+  <img src="demo/video/customers.gif" alt="Customer Records" width="48%">
+  <img src="demo/video/employees.gif" alt="Employee Management" width="48%">
+  <br><em>Customer Relationship Management (Left) & Staff Management (Right)</em>
+</p>
+
+### 🧾 POS Order Processing & Invoice Printing
+Order creation with automated stock calculation, transaction locking, and receipt generation.
 
 <p align="center">
-  <h3>Server & Client Customers </h3>
-  <img src="demo/video/customers.gif" alt="Server-Client Customers">
-  <p><em> The customer management interface.</em></p>
-</p>
-<p align="center">
-  <h3>Server & Client Employees </h3>
-  <img src="demo/video/employees.gif" alt="Server-Client Employees">
-  <p><em> The employee management interface for admins.</em></p>
+  <img src="demo/video/order_orderdetails.gif" alt="Order Processing" width="85%">
+  <br><em>Order & Line Item Details Processing</em>
 </p>
 
-### Order Processing
-A look at the comprehensive order and order details management.
+### 📊 Real-time Business Analytics & Reporting
+Graphical reports for product sales volume trends and total revenue statistics.
 
 <p align="center">
-  <h3>Server & Client Order and Details </h3>
-  <img src="demo/video/order_orderdetails.gif" alt="Server-Client Order and Details">
-  <p><em> Processing and viewing order and order detail information.</em></p>
+  <img src="demo/video/productstatistic.gif" alt="Product Statistics" width="48%">
+  <img src="demo/video/revenuestatistic.gif" alt="Revenue Statistics" width="48%">
+  <br><em>Product Sales Volume Analytics (Left) & Revenue Trend Analysis (Right)</em>
 </p>
 
-### In-depth Statistics & Reporting
-Gain valuable insights with powerful statistical analysis tools.
-
+### ❓ Integrated Help Center & Software Details
 <p align="center">
-  <h3>Server & Client Product Statistics </h3>
-  <img src="demo/video/productstatistic.gif" alt="Server-Client Product Statistics">
-  <p><em> Detailed statistics on product sales and performance.</em></p>
+  <img src="demo/video/helpcenter.gif" alt="Help Center" width="48%">
+  <img src="demo/video/softwareinfor.gif" alt="Software Info" width="48%">
+  <br><em>Web Help Center Documentation (Left) & System Version Info (Right)</em>
 </p>
-<p align="center">
-  <h3>Server & Client Revenue Statistics </h3>
-  <img src="demo/video/revenuestatistic.gif" alt="Server-Client Revenue Statistics">
-  <p><em> Visualizing revenue trends and data.</em></p>
-</p>
-
-### Supplemental Information
-Supporting documentation and software details.
-
-<p align="center">
-  <h3>Help Center </h3>
-  <img src="demo/video/helpcenter.gif" alt="Server-Client Help Center">
-  <p><em> Accessing the integrated Help Center website for assistance.</em></p>
-</p>
-<p align="center">
-  <h3>Software Information </h3>
-  <img src="demo/video/softwareinfor.gif" alt="Server-Client Software Information">
-  <p><em> A look at the software information and version details.</em></p>
-</p>
----
-
-## ✨ Key Architectural Highlights & Advanced Technologies ✨
-
-This project is engineered with a powerful stack of technologies and a thoughtful architectural design, ensuring a high-performance, scalable, and secure application.
-
-### 🌐 The Client-Server Model with Multi-threaded Processing
-At the heart of this system lies a sophisticated **Client-Server model** built on standard TCP/IP sockets. This architecture allows the client application (the user interface) to be completely decoupled from the server, where all the heavy lifting and data processing occur.
-
-* **Server Core & Listening**: Our server application, initiated in `Program.cs`, acts as the central command center. It uses a `TcpListener` to continuously and asynchronously **listen for incoming client connections** on a dedicated port, which is configured to be `301`. This listening loop is the entry point for all client communication.
-    
-    ```csharp
-    listener = new TcpListener(IPAddress.Any, PORT);
-    listener.Start();
-    Console.WriteLine($"Server started. Listening on port {PORT}...");
-    while (true)
-    {
-        TcpClient client = await listener.AcceptTcpClientAsync();
-        // ...
-    }
-    ```
-    
-* **⚡ Multi-threaded Processing**: To prevent a single client from monopolizing server resources, each new client connection is handled with an elegant **asynchronous multi-threaded approach**. Once a client connects, the server immediately spawns a new task using `Task.Run(() => ServerHandler.HandleClientAsync(client, ...))`. This ensures that each client request is processed on a separate thread, allowing the server to handle **countless simultaneous connections** without any blocking, which is critical for a responsive and high-throughput system.
-    
-* **🔌 Socket Communication**: The foundation of our communication is a direct, highly efficient, and low-latency protocol built on raw **TCP sockets**. This choice of protocol over higher-level abstractions like HTTP ensures minimal overhead and maximum speed, which is crucial for real-time data exchange in a busy sales environment.
-    
-* **📦 Robust Message Framing with Length-Prefixed Protocol**: To overcome the inherent challenges of stream-based socket communication (where messages can be split or combined), we implemented a custom, highly reliable **length-prefixed messaging protocol**. Before sending the actual JSON payload, the client first sends a 4-byte integer representing the total length of the message. The server (and vice versa) then reads exactly that many bytes, guaranteeing the reception of the complete and untruncated message. This is a powerful feature implemented meticulously in both `ClientService.cs` and `ServerHandler.cs`.
-    
-    ```csharp
-    // Client side:
-    byte[] requestBytes = Encoding.UTF8.GetBytes(requestJson);
-    byte[] lengthBytes = BitConverter.GetBytes(requestBytes.Length);
-    await stream.WriteAsync(lengthBytes, 0, lengthBytes.Length);
-    await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
-    ```
-    
 
 ---
 
-### 🎨 4-Layer Architectural Pattern (Client -> Server -> Business Logic Layer -> Data Access Layer) Data is transported using Data Transfer Objects (DTOs)
-The entire system is a masterclass in clean architecture, meticulously organized into four distinct layers. This clear separation of responsibilities promotes modularity, testability, and long-term maintainability.
+## 🏗️ System Architecture & Technologies
 
-1.  **🖥️ Client Layer (`ElectronicsStore.Presentation`, `ElectronicsStore.Client`)**: This is the user's primary interface, built as a rich **Windows Forms UI**. It's responsible for all user interaction, displaying data, and translating user actions into concrete requests. The `ClientService` component within this layer handles all communication with the server, abstracting away the networking complexities from the UI.
-2.  **⚙️ Server Layer (`ElectronicsStore.Server`)**: Acting as the intelligent intermediary, the server layer is the control center for client requests. The `ServerHandler` is a key component here, responsible for:
-    * Receiving and deserializing incoming JSON requests using **Newtonsoft.Json**.
-    * Dynamically invoking the appropriate business logic based on the `MethodName` property in the request.
-    * Meticulously crafting and serializing the response object before sending it back to the client.
-3.  **🧠 Business Logic Layer (BLL - `ElectronicsStore.BusinessLogic`)**: This is the "brain" of the application, containing all the core business rules and operations (e.g., `EmployeeService`, `OrderService`). This layer is blissfully unaware of the client or the database. It handles all data validation, complex calculations, and workflow orchestration. A critical design choice here is the use of **Data Transfer Objects (DTOs)**, which are plain objects used for clean and efficient data exchange between layers, preventing direct exposure of internal domain models.
-4.  **🗄️ Data Access Layer (DAL - `ElectronicsStore.DataAccess`)**: The data guardian. This layer is solely dedicated to seamless and secure interaction with the database. It contains robust repositories (e.g., `IOrderRepository`, `OrderRepository`) that abstract away the complexities of the underlying data storage mechanism.
+### 📐 High-Level Architecture Diagram
 
----
-
-### 💾 Robust Data Management & Transaction Integrity
-
-* **.NET Entity Framework Core & SQL Server**: We harness the power of **.NET Entity Framework Core**, a cutting-edge Object-Relational Mapper (ORM), to effortlessly interact with our **SQL Server** database. This magical tool simplifies all data operations (CRUD), enforces strong type-safety, and dramatically reduces boilerplate code for database interactions.
-    
-* **🛡️ Unit of Work Pattern**: To ensure absolute data consistency and integrity, we employ the **Unit of Work pattern**. This pattern guarantees that all database operations within a single business transaction (e.g., creating a new order with its details) are treated as a single, atomic unit. The `UnitOfWork` class manages the `DbContext` and ensures that all changes are either successfully committed together or rolled back completely if any part of the transaction fails, preventing partial or inconsistent data states.
-    
-    ```csharp
-    // Inside ServerHandler, a new UnitOfWork is created for each request
-    using var context = new ElectronicsStoreContext(dbContextOptions);
-    var unitOfWork = new UnitOfWork(context);
-    // ...
-    // Inside a service method:
-    // Perform multiple repository operations
-    await _unitOfWork.CommitAsync(); // All changes are committed as a single transaction
-    ```
-    
-* **Data Transfer Objects (DTOs)**: As part of the multi-layered architecture, DTOs are extensively used to transfer data between the client, server, and business logic. They represent a simplified view of the domain models and are optimized for serialization and deserialization, which is handled efficiently using **Newtonsoft.Json** for all network communication.
-    
-    ```csharp
-    // Client sending a request with a DTO payload
-    ClientRequest<LoginRequestDto> request = new ClientRequest<LoginRequestDto>("Login", loginDto);
-    string requestJson = JsonConvert.SerializeObject(request);
-    
-    // Server receiving and deserializing the request
-    ClientRequestBase requestBase = JsonConvert.DeserializeObject<ClientRequestBase>(requestJson);
-    ```
-    
----
-
-## Project Structure (Conceptual)
-```
-├── ElectronicsStore.sln
-├── ElectronicsStore.Client (Presentation) (Windows Forms UI, ClientService for server communication)
-│   ├── ClientService.cs
-│   ├── frmMain.cs
-│   └── ... (Other UI forms)
-├── ElectronicsStore.Server (Server application for handling client requests)
-│   ├── Program.cs (Main server entry point)
-│   └── ServerHandler.cs (Handles client requests, invokes BLL)
-├── ElectronicsStore.BusinessLogic (Business Logic Layer)
-│   ├── OrderService.cs
-│   ├── EmployeeService.cs
-│   ├── ProductService.cs
-│   ├── CustomerService.cs
-│   ├── MappingProfile.cs (AutoMapper configuration)
-│   ├── MappingConfig.cs (FluentValidation configuration)
-│   └── ... (Other service classes)
-├── ElectronicsStore.DataAccess (Data Access Layer)
-│   ├── IOrderRepository.cs
-│   ├── OrderRepository.cs
-│   ├── ElectronicsStoreContext.cs (EF Core DbContext)
-│   └── ... (Other repository interfaces and implementations)
-├── ElectronicsStore.DataTransferObject (DTOs for data exchange)
-│   ├── OrderDTO.cs
-│   ├── ProductDTO.cs
-│   ├── LoginRequestDTO.cs
-│   ├── LoginResponseDTO.cs
-│   └── ... (All other DTOs)
-└── ElectronicsStore.Models (Entity Framework Core models/entities)
-├── Orders.cs
-├── Employees.cs
-├── Customers.cs
-├── Products.cs
-├── Order_Details.cs
-└── ... (All other database entities)
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Electronic Store Management System                       │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│     Presentation Layer (Client)      │       Server Layer (Backend Core)    │
+│     C# .NET 8 WinForms POS UI        │       ASP.NET Core 8 Web API         │
+│     HttpClient & Polly Resilience    │       SignalR Real-Time Hub          │
+│     JWT Bearer Authentication        │       Serilog Structured Logging     │
+├──────────────────────────────────────┴──────────────────────────────────────┤
+│               Business Logic Layer (BLL) & DTOs Layer                       │
+│               OrderService, ProductService, EmployeeService, etc.           │
+│               Data Transfer Objects (DTOs) & Newtonsoft.Json                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│               Data Access Layer (DAL) & Entity Framework Core               │
+│               Unit of Work Pattern (IUnitOfWork) & Repository Pattern       │
+│               EF Core 9 DbContext + Interceptor Audit Logging               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                      SQL Server / LocalDB Database                          │
+│               Relational DB (Category, Product, Customer, Employee, Order)  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 How to Run (General Steps) 🚀
+---
 
-Getting this system up and running is straightforward:
+## 🛠️ Core Technologies & Architectural Patterns
 
-1.  **🗃️ Database Setup:**
-    * Ensure **SQL Server** is installed and purring. 🐢
-    * Restore the database backup (if provided) or simply run **Entity Framework migrations** to automatically sculpt the database schema. 🛠️
-    * **Crucially**, update the connection strings in `appsettings.json` (or `App.config` for older projects) within both the Server and potentially Client projects to point directly to your SQL Server instance. 🔗
+### 1. ⚡ Real-Time ASP.NET Core & SignalR
+- **RESTful API Core**: The system now exposes standardized, secured REST endpoints (HTTP/HTTPS) using ASP.NET Core Web API instead of raw TCP Sockets. This allows easy integration with external services and scalable load balancing.
+- **SignalR Real-time Data**: Utilizes `@microsoft/signalr` to push real-time updates directly to connected WinForms clients, keeping multiple POS dashboards in sync synchronously.
 
-2.  **💻 Server Application:**
-    * Open the entire solution in **Visual Studio**. 📂
-    * Build the `ElectronicsStore.Server` project. 🏗️
-    * Execute the `ElectronicsStore.Server` application. Watch as it gracefully starts listening on the configured port (defaulting to `301`). 👂
+### 2. 🛡️ Unit of Work, Repository Pattern & Audit Interceptors
+- **Atomic Transactions**: Ensures all database changes execute inside a single transaction context via `IUnitOfWork`.
+- **Entity Framework Core Interceptors**: Automatic audit logging interceptor seamlessly tracks every CRUD operation with timestamp and changes.
 
-3.  **🖥️ Client Application:**
-    * Build the `ElectronicsStore.Client` project. 🏗️
-    * Launch the `ElectronicsStore.Client` application (e.g., `frmMain`). 🏁
-    * Double-check that the `ServerIp` and `ServerPort` configured in the client perfectly match the server's listening address and port. Seamless connection guaranteed! 🤝
+### 3. 🎯 5-Layer Clean Code Solution Structure
+- **`Presentation/`**: Rich WinForms client interface built for fast desktop POS operation, now armed with Polly retry resilience.
+- **`Server/`**: High-performance ASP.NET Core API server with JWT Auth, Serilog logging, and SignalR hub.
+- **`BusinessLogicLayer/`**: Core business domain logic, validation rules, and DTO orchestration.
+- **`DataAccessLayer/`**: EF Core `DbContext`, Entity models, Repositories, and Data Seeding.
+- **`DataTransferObject/`**: Clean DTO classes for JSON network exchange.
 
-## 👤 Author 👤
+---
 
-**Huynh Quoc Huy**
+## 📂 Project Directory Structure
 
-* **GitHub Profile:** [https://github.com/hkhuang07](https://github.com/hkhuang07) 🌟
-* **Project Repository:** [https://github.com/hkhuang07/Sales-Management-Client-Server-Model-Socket-Multil-Threads](https://github.com/hkhuang07/Sales-Management-Client-Server-Model-Socket-Multil-Threads) 🔗
+```
+Electronic-Store-NET-Winform-Socket-MultilThreads/
+├── demo/                             # Demo screenshots, diagrams, and video GIFs
+├── src/                              # Source code directory
+│   ├── Presentation/                 # Client WinForms UI App (ElectronicsStore.Client)
+│   ├── Server/                       # Server Application (ElectronicsStore.Server)
+│   ├── BusinessLogicLayer/           # BLL Services & Business Rules
+│   ├── DataAccessLayer/              # EF Core DbContext, Repositories, Migrations & DataSeeder
+│   ├── DataTransferObject/           # DTO classes for JSON network exchange
+│   └── ElectronicsStoreManagement.sln # Visual Studio Solution file
+└── README.md                         # Project documentation
+```
+
+---
+
+## 🚀 Deployment & Installation Guide
+
+Follow these steps to deploy and run the system locally:
+
+### 1. 📋 Prerequisites
+- **.NET 8.0 SDK** or higher installed.
+- **Visual Studio 2022** (with .NET Desktop Development workload).
+- **SQL Server 2019+** or **SQL Server LocalDB**.
+
+### 2. 📥 Download Source Code
+```bash
+git clone https://github.com/hkhuang07/Electronic-Store-NET-Winform-Socket-MultilThreads.git
+cd Electronic-Store-NET-Winform-Socket-MultilThreads
+```
+
+### 3. 🗄️ Database Setup & EF Core Model Migration
+1. Configure your SQL Server connection string in `src/Server/appsettings.json` or `ElectronicsStoreContext.cs`:
+   ```json
+   "ConnectionStrings": {
+     "DefaultConnection": "Server=.;Database=ElectronicsStoreDB;Trusted_Connection=True;TrustServerCertificate=True;"
+   }
+   ```
+2. Run EF Core Migration & Model Data Seeding to automatically build schema and insert seed data (Categories, Manufacturers, Employees, Products, Customers):
+   ```bash
+   dotnet ef database update --project src/DataAccessLayer --startup-project src/Server
+   ```
+   *(Or run `Update-Database` in Visual Studio Package Manager Console)*.
+
+### 4. 🖥️ Running the Application
+
+1. **Start the Server Application First**:
+   ```bash
+   dotnet run --project src/Server/ElectronicsStore.Server.csproj
+   ```
+   *The server console will start listening on `0.0.0.0:301`.*
+
+2. **Launch the Client POS Application**:
+   ```bash
+   dotnet run --project src/Presentation/ElectronicsStore.Client.csproj
+   ```
+   - Log in using default seed credentials (passwords are strictly verified via BCrypt hashing):
+     - **Admin**: Username `linsirui` | Password `1111111111`
+     - **Staff**: Username `huynhquochuy` | Password `0000000000`
+
+---
+
+## 👤 Author & License
+
+**Huỳnh Quốc Huy**
+- **GitHub**: [hkhuang07](https://github.com/hkhuang07)
+- **Repository**: [Electronic-Store-NET-Winform-Socket-MultilThreads](https://github.com/hkhuang07/Electronic-Store-NET-Winform-Socket-MultilThreads)
+
+*Copyright © 2025 Huỳnh Quốc Huy. All Rights Reserved.*

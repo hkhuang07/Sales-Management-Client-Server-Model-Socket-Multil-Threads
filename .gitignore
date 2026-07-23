@@ -1,1 +1,54 @@
+# ====================================================================
+# [VISUAL STUDIO & .NET SYSTEM GITIGNORE]
+# ====================================================================
+
+# Build results & Output directories
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+build/
+out/
+publish/
+
+# Visual Studio User & Environment Specific Files
 .vs/
+*.user
+*.userosv
+*.suo
+*.userstyle
+*.aps
+*.pdb
+*.cache
+*.docstates
+*.sln.docstates
+*.slnLaunch.user
+
+# Sensitive Configs & Secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+*.pem
+*.pfx
+*.key
+*.p12
+
+# Operating System Files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Test Results & Tooling
+TestResults/
+*.coverage
+*.coveragexml
+
+# Package / Temp Cache
+packages/
+*.nupkg
+*.tmp
+
+# EF Core Database Migrations
+[Mm]igrations/
