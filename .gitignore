@@ -9,7 +9,7 @@
 [Ll]ogs/
 build/
 out/
-publish/
+# publish/
 
 # Visual Studio User & Environment Specific Files
 .vs/
