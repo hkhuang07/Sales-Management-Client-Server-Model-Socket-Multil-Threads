@@ -28,6 +28,18 @@ namespace ElectronicsStore.Server.Controllers
             return Ok(new ServerResponse<List<OrderDTO>>(dtos));
         }
 
+        [HttpGet("{id}")]
+        public IActionResult GetOrderById(int id)
+        {
+            var order = _unitOfWork.OrderRepository.GetById(id);
+            if (order != null)
+            {
+                var dto = _mapper.Map<OrderDTO>(order);
+                return Ok(new ServerResponse<OrderDTO>(dto));
+            }
+            return NotFound(new ServerResponse<OrderDTO>(null, "Order not found."));
+        }
+
         [HttpGet("{id}/details")]
         public IActionResult GetOrderDetails(int id)
         {
@@ -65,8 +77,19 @@ namespace ElectronicsStore.Server.Controllers
         [HttpPut]
         public IActionResult UpdateOrder([FromBody] OrderDTO orderDto)
         {
-            var order = _mapper.Map<Orders>(orderDto);
-            _unitOfWork.OrderRepository.Update(order);
+            var existingOrder = _unitOfWork.OrderRepository.GetById(orderDto.ID);
+            if (existingOrder == null)
+            {
+                return NotFound(new ServerResponse<bool>(false, "Order not found."));
+            }
+
+            if (orderDto.CustomerID > 0) existingOrder.CustomerID = orderDto.CustomerID;
+            if (orderDto.EmployeeID > 0) existingOrder.EmployeeID = orderDto.EmployeeID;
+            if (!string.IsNullOrEmpty(orderDto.Note)) existingOrder.Note = orderDto.Note;
+            if (!string.IsNullOrEmpty(orderDto.Status)) existingOrder.Status = orderDto.Status;
+            if (orderDto.Date != default) existingOrder.Date = orderDto.Date;
+
+            _unitOfWork.OrderRepository.Update(existingOrder);
             _unitOfWork.SaveChanges();
             return Ok(new ServerResponse<bool>(true, "Order updated successfully."));
         }

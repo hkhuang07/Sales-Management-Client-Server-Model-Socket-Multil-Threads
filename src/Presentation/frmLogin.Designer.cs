@@ -1,4 +1,4 @@
-﻿namespace ElectronicsStore.Presentation
+namespace ElectronicsStore.Presentation
 {
     partial class frmLogin
     {
@@ -34,6 +34,7 @@
             pictureBox2 = new PictureBox();
             chkSave = new CheckBox();
             btnCancel = new Button();
+            btnSignUp = new Button();
             btnLogin = new Button();
             txtPassword = new TextBox();
             txtUserName = new TextBox();
@@ -63,6 +64,7 @@
             panel1.Controls.Add(pictureBox2);
             panel1.Controls.Add(chkSave);
             panel1.Controls.Add(btnCancel);
+            panel1.Controls.Add(btnSignUp);
             panel1.Controls.Add(btnLogin);
             panel1.Controls.Add(txtPassword);
             panel1.Controls.Add(txtUserName);
@@ -100,24 +102,37 @@
             // btnCancel
             // 
             btnCancel.BackColor = Color.CornflowerBlue;
-            btnCancel.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            btnCancel.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnCancel.ForeColor = Color.AliceBlue;
-            btnCancel.Location = new Point(149, 277);
+            btnCancel.Location = new Point(160, 277);
             btnCancel.Name = "btnCancel";
-            btnCancel.Size = new Size(86, 40);
-            btnCancel.TabIndex = 5;
+            btnCancel.Size = new Size(75, 40);
+            btnCancel.TabIndex = 6;
             btnCancel.Text = "Cancel";
             btnCancel.UseVisualStyleBackColor = false;
             btnCancel.Click += btnCancel_Click;
             // 
+            // btnSignUp
+            // 
+            btnSignUp.BackColor = Color.SeaGreen;
+            btnSignUp.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnSignUp.ForeColor = Color.AliceBlue;
+            btnSignUp.Location = new Point(80, 277);
+            btnSignUp.Name = "btnSignUp";
+            btnSignUp.Size = new Size(75, 40);
+            btnSignUp.TabIndex = 5;
+            btnSignUp.Text = "Sign Up";
+            btnSignUp.UseVisualStyleBackColor = false;
+            btnSignUp.Click += btnSignUp_Click;
+            // 
             // btnLogin
             // 
             btnLogin.BackColor = Color.RoyalBlue;
-            btnLogin.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            btnLogin.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnLogin.ForeColor = Color.AliceBlue;
-            btnLogin.Location = new Point(9, 277);
+            btnLogin.Location = new Point(0, 277);
             btnLogin.Name = "btnLogin";
-            btnLogin.Size = new Size(86, 40);
+            btnLogin.Size = new Size(75, 40);
             btnLogin.TabIndex = 4;
             btnLogin.Text = "Log In";
             btnLogin.UseVisualStyleBackColor = false;
@@ -202,6 +217,7 @@
         private PictureBox pictureBox1;
         private Panel panel1;
         private Button btnCancel;
+        private Button btnSignUp;
         private Button btnLogin;
         private Label label3;
         private Label label2;

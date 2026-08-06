@@ -112,6 +112,14 @@ namespace ElectronicsStore.Presentation
             }
         }
 
+        private void mnuSignUp_Click(object sender, EventArgs e)
+        {
+            using (frmSignUp signUp = new frmSignUp(_clientService))
+            {
+                signUp.ShowDialog();
+            }
+        }
+
         private async void mnuRestore_Click(object sender, EventArgs e)
         {
             OpenFileDialog restoreDialog = new OpenFileDialog();

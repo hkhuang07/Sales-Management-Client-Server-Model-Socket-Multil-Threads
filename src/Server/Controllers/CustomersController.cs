@@ -28,6 +28,18 @@ namespace ElectronicsStore.Server.Controllers
             return Ok(new ServerResponse<List<CustomerDTO>>(dtos));
         }
 
+        [HttpGet("{id}")]
+        public IActionResult GetCustomerById(int id)
+        {
+            var customer = _unitOfWork.CustomerRepository.GetById(id);
+            if (customer != null)
+            {
+                var dto = _mapper.Map<CustomerDTO>(customer);
+                return Ok(new ServerResponse<CustomerDTO>(dto));
+            }
+            return NotFound(new ServerResponse<CustomerDTO>(null, "Customer not found."));
+        }
+
         [HttpPost]
         public IActionResult AddCustomer([FromBody] CustomerDTO customerDto)
         {

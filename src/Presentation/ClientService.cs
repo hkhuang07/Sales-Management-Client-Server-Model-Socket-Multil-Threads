@@ -86,7 +86,9 @@ namespace ElectronicsStore.Client
 
         private async Task<TResponseData> SendHttpRequestAsync<TRequestPayload, TResponseData>(HttpMethod method, string endpoint, TRequestPayload payload)
         {
-            if (string.IsNullOrEmpty(Token) && !endpoint.Contains("api/Auth/login", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(Token) 
+                && !endpoint.Contains("api/Auth/login", StringComparison.OrdinalIgnoreCase)
+                && !endpoint.Contains("api/Auth/register", StringComparison.OrdinalIgnoreCase))
             {
                 return default;
             }
@@ -190,12 +192,38 @@ namespace ElectronicsStore.Client
 
         public async Task<byte[]?> GetProductImageAsync(string fileName)
         {
-            return null; // For simplicity in this demo, image operations return null
+            if (string.IsNullOrWhiteSpace(fileName)) return null;
+            try
+            {
+                PrepareHeaders();
+                HttpResponseMessage response = await _httpClient.GetAsync($"api/Products/images/{Uri.EscapeDataString(fileName)}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadAsByteArrayAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error fetching product image {fileName}: {ex.Message}");
+            }
+            return null;
         }
 
         public async Task<bool> UploadProductImageAsync(int productId, string fileName, byte[] imageData)
         {
-            return false;
+            if (imageData == null || imageData.Length == 0) return false;
+            var payload = new ProductImageUploadDTO
+            {
+                ProductID = productId,
+                FileName = fileName,
+                ImageData = imageData
+            };
+            return await SendHttpRequestAsync<ProductImageUploadDTO, bool>(HttpMethod.Post, "api/Products/upload-image", payload);
+        }
+
+        public async Task<bool> RegisterAsync(RegisterRequestDTO registerRequest)
+        {
+            return await SendHttpRequestAsync<RegisterRequestDTO, bool>(HttpMethod.Post, "api/Auth/register", registerRequest);
         }
 
         // --- Categories ---
@@ -338,7 +366,7 @@ namespace ElectronicsStore.Client
                 order.CustomerID = dto.CustomerID;
                 order.EmployeeID = dto.EmployeeID;
                 order.Note = dto.Note;
-                order.Status = "Confirmed";
+                order.Status = "Completed";
                 await SendHttpRequestAsync<OrderDTO, object>(HttpMethod.Put, "api/Orders", order);
                 return true;
             }
@@ -381,6 +409,7 @@ namespace ElectronicsStore.Client
                 case "UpdateEmployee": method = HttpMethod.Put; endpoint = "api/Employees"; break;
                 case "DeleteEmployee": method = HttpMethod.Delete; endpoint = $"api/Employees/{payload}"; break;
                 case "ChangeEmployeePassword": method = HttpMethod.Post; endpoint = "api/Auth/change-password"; break;
+                case "Register": method = HttpMethod.Post; endpoint = "api/Auth/register"; break;
 
                 case "GetAllCustomers": method = HttpMethod.Get; endpoint = "api/Customers"; break;
                 case "SearchCustomers": method = HttpMethod.Get; endpoint = $"api/Customers/search?keyword={Uri.EscapeDataString(payload?.ToString() ?? "")}"; break;

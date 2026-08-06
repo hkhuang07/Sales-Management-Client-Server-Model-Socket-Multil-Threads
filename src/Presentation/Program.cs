@@ -12,9 +12,23 @@ namespace Presentation
         [STAThread]
         static void Main()
         {
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
 
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
+            Application.ThreadException += (sender, e) =>
+            {
+                string detail = e.Exception.InnerException != null ? $"\n\nInner: {e.Exception.InnerException.Message}" : "";
+                MessageBox.Show($"UI Error: {e.Exception.Message}{detail}\n\nStack Trace:\n{e.Exception.StackTrace}", "Application Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+            {
+                if (e.ExceptionObject is Exception ex)
+                {
+                    string detail = ex.InnerException != null ? $"\n\nInner: {ex.InnerException.Message}" : "";
+                    MessageBox.Show($"Fatal Error: {ex.Message}{detail}\n\nStack Trace:\n{ex.StackTrace}", "Application Fatal Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            };
+
             ApplicationConfiguration.Initialize();
             Application.Run(new frmMain());
         }

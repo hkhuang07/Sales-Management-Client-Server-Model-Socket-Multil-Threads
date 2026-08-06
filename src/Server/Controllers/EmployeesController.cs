@@ -8,7 +8,7 @@ namespace ElectronicsStore.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class EmployeesController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -28,7 +28,20 @@ namespace ElectronicsStore.Server.Controllers
             return Ok(new ServerResponse<List<EmployeeDTO>>(dtos));
         }
 
+        [HttpGet("{id}")]
+        public IActionResult GetEmployeeById(int id)
+        {
+            var employee = _unitOfWork.EmployeeRepository.GetById(id);
+            if (employee != null)
+            {
+                var dto = _mapper.Map<EmployeeDTO>(employee);
+                return Ok(new ServerResponse<EmployeeDTO>(dto));
+            }
+            return NotFound(new ServerResponse<EmployeeDTO>(null, "Employee not found."));
+        }
+
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult AddEmployee([FromBody] EmployeeDTO employeeDto)
         {
             var employee = _mapper.Map<Employees>(employeeDto);
@@ -40,6 +53,7 @@ namespace ElectronicsStore.Server.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public IActionResult UpdateEmployee([FromBody] EmployeeDTO employeeDto)
         {
             var employee = _mapper.Map<Employees>(employeeDto);
@@ -66,6 +80,7 @@ namespace ElectronicsStore.Server.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult DeleteEmployee(int id)
         {
             var employee = _unitOfWork.EmployeeRepository.GetById(id);

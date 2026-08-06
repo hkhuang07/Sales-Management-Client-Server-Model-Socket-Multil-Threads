@@ -81,6 +81,14 @@ namespace ElectronicsStore.Presentation
             this.Close();
         }
 
+        private void btnSignUp_Click(object sender, EventArgs e)
+        {
+            using (frmSignUp signUp = new frmSignUp(_clientService))
+            {
+                signUp.ShowDialog();
+            }
+        }
+
         private void txtPassword_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)

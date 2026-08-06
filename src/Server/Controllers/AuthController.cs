@@ -1,5 +1,6 @@
 using ElectronicsStore.DataAccess;
 using ElectronicsStore.DataTransferObject;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -65,6 +66,78 @@ namespace ElectronicsStore.Server.Controllers
                 FullName = user.FullName,
                 Roles = user.Role
             });
+        }
+
+        [HttpPost("change-password")]
+        public IActionResult ChangePassword([FromBody] ChangePasswordRequestDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                return BadRequest(new ServerResponse<bool>(false, "Invalid password change request."));
+            }
+
+            var employee = _unitOfWork.EmployeeRepository.GetById(request.EmployeeId);
+            if (employee == null)
+            {
+                return NotFound(new ServerResponse<bool>(false, "User not found."));
+            }
+
+            // Verify old password
+            bool isOldPasswordValid = false;
+            try
+            {
+                if (!string.IsNullOrEmpty(employee.Password))
+                {
+                    isOldPasswordValid = BCrypt.Net.BCrypt.Verify(request.OldPassword, employee.Password);
+                }
+            }
+            catch
+            {
+                isOldPasswordValid = false;
+            }
+
+            if (!isOldPasswordValid)
+            {
+                return BadRequest(new ServerResponse<bool>(false, "Incorrect old password."));
+            }
+
+            // Hash and update new password
+            employee.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            _unitOfWork.EmployeeRepository.Update(employee);
+            _unitOfWork.SaveChanges();
+
+            return Ok(new ServerResponse<bool>(true, "Password changed successfully."));
+        }
+
+        [HttpPost("register")]
+        [AllowAnonymous]
+        public IActionResult Register([FromBody] RegisterRequestDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest(new ServerResponse<bool>(false, "Username and Password are required."));
+            }
+
+            var existing = _unitOfWork.EmployeeRepository.GetbyUserName(request.Username.Trim());
+            if (existing != null)
+            {
+                return BadRequest(new ServerResponse<bool>(false, "Username already exists."));
+            }
+
+            var newEmployee = new Employees
+            {
+                UserName = request.Username.Trim(),
+                Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                FullName = request.FullName.Trim(),
+                EmployeePhone = request.EmployeePhone.Trim(),
+                EmployeeAddress = request.EmployeeAddress.Trim(),
+                Role = request.Role
+            };
+
+            _unitOfWork.EmployeeRepository.Add(newEmployee);
+            _unitOfWork.SaveChanges();
+
+            return Ok(new ServerResponse<bool>(true, "Registration successful. You can now log in."));
         }
 
         private string GenerateJwtToken(Employees user)

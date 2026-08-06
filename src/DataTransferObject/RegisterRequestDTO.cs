@@ -1,38 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace ElectronicsStore.DataTransferObject
 {
     public class RegisterRequestDTO
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public string Email { get; set; }
-        public string FullName { get; set; }
-        // Có thể thêm Role mặc định nếu là đăng ký người dùng thông thường
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string EmployeePhone { get; set; } = string.Empty;
+        public string EmployeeAddress { get; set; } = string.Empty;
+        public bool Role { get; set; } = false; // Default: false = Staff, true = Admin
     }
-
-    public class ConfirmAccountRequestDTO
-    {
-        public string Username { get; set; }
-        public string Token { get; set; }
-    }
-
-    public class ResetPasswordRequestDTO
-    {
-        public string Email { get; set; }
-        public string Token { get; set; }
-        public string NewPassword { get; set; }
-    }
-
-    public class EmailRequestDTO
-    {
-        public string Email { get; set; }
-        public string Subject { get; set; }
-        public string Body { get; set; }
-    }
-
 }

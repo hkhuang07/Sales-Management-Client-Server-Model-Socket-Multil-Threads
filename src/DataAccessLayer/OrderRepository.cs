@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,10 +26,16 @@ namespace ElectronicsStore.DataAccess
         }
 
         // Tra cứu không có chi tiết
-        public List<Orders> GetAll() => _context.Order.ToList();
+        public List<Orders> GetAll() => _context.Order
+            .Include(o => o.Employee)
+            .Include(o => o.Customer)
+            .Include(o => o.ViewDetails)
+            .ToList();
 
         // Tra cứu theo ID với chi tiết
         public Orders? GetById(int id) => _context.Order
+            .Include(o => o.Employee)
+            .Include(o => o.Customer)
             .Include(o => o.ViewDetails)
             .FirstOrDefault(o => o.ID == id);
 

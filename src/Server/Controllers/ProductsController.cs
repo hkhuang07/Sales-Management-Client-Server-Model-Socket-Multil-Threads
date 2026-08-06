@@ -76,5 +76,57 @@ namespace ElectronicsStore.Server.Controllers
             var dtos = _mapper.Map<List<ProductDTO>>(products);
             return Ok(new ServerResponse<List<ProductDTO>>(dtos));
         }
+
+        [HttpPost("upload-image")]
+        public IActionResult UploadProductImage([FromBody] ProductImageUploadDTO dto)
+        {
+            if (dto == null || dto.ImageData == null || dto.ImageData.Length == 0)
+            {
+                return BadRequest(new ServerResponse<bool>(false, "Invalid image data."));
+            }
+
+            try
+            {
+                string imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+                if (!Directory.Exists(imagesFolder))
+                {
+                    Directory.CreateDirectory(imagesFolder);
+                }
+
+                string safeFileName = string.IsNullOrWhiteSpace(dto.FileName) ? $"product_{dto.ProductID}.jpg" : Path.GetFileName(dto.FileName);
+                string filePath = Path.Combine(imagesFolder, safeFileName);
+                System.IO.File.WriteAllBytes(filePath, dto.ImageData);
+
+                var product = _unitOfWork.ProductRepository.GetById(dto.ProductID);
+                if (product != null)
+                {
+                    product.Image = safeFileName;
+                    _unitOfWork.ProductRepository.Update(product);
+                    _unitOfWork.SaveChanges();
+                }
+
+                return Ok(new ServerResponse<bool>(true, "Image uploaded successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ServerResponse<bool>(false, $"Image upload failed: {ex.Message}"));
+            }
+        }
+
+        [HttpGet("images/{fileName}")]
+        [AllowAnonymous]
+        public IActionResult GetProductImage(string fileName)
+        {
+            string imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+            string filePath = Path.Combine(imagesFolder, Path.GetFileName(fileName));
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(fileBytes, "image/jpeg");
+        }
     }
 }
